@@ -1,0 +1,29 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Type: [application/json; charset=utf-8]
+      User-Agent: [python/3.5.3 (Windows-10-10.0.15063-SP0) requests/2.9.1 msrest/0.4.7
+          msrest_azure/0.4.7 azure-mgmt-recoveryservices/0.1.0 Azure-SDK-For-Python
+          AZURECLI/TEST/2.0.3+dev]
+      accept-language: [en-US]
+      x-ms-client-request-id: [f8d58c42-33d4-11e7-ad68-8cdcd428ae4b]
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.RecoveryServices/vaults?api-version=2016-06-01
+  response:
+    body: {string: '{"value":[{"location":"southeastasia","name":"panbhatest1","etag":"W/\"datetime''2017-03-24T07%3A50%3A57.8294536Z''\"","properties":{"provisioningState":"Succeeded"},"id":"/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/panbharg1/providers/Microsoft.RecoveryServices/vaults/panbhatest1","type":"Microsoft.RecoveryServices/vaults","sku":{"name":"RS0","tier":"Standard"}},{"location":"southeastasia","name":"zakinkhTestVault1","etag":"W/\"datetime''2017-03-24T07%3A50%3A58.0604722Z''\"","properties":{"provisioningState":"Succeeded"},"id":"/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/zakinkhatest1/providers/Microsoft.RecoveryServices/vaults/zakinkhTestVault1","type":"Microsoft.RecoveryServices/vaults","sku":{"name":"RS0","tier":"Standard"}},{"location":"japaneast","name":"samvault1","etag":"W/\"datetime''2017-03-24T07%3A50%3A58.2241529Z''\"","properties":{"provisioningState":"Succeeded"},"id":"/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/samrg1/providers/Microsoft.RecoveryServices/vaults/samvault1","type":"Microsoft.RecoveryServices/vaults","sku":{"name":"RS0","tier":"Standard"}}]}'}
+    headers:
+      Cache-Control: [no-cache]
+      Content-Type: [application/json; charset=utf-8]
+      Date: ['Mon, 08 May 2017 09:59:06 GMT']
+      Expires: ['-1']
+      Pragma: [no-cache]
+      Strict-Transport-Security: [max-age=31536000; includeSubDomains]
+      Vary: [Accept-Encoding]
+      content-length: ['1147']
+      x-ms-original-request-ids: [4e10e802-463c-4e15-9e0d-231f5815047f, 4e10e802-463c-4e15-9e0d-231f5815047f]
+    status: {code: 200, message: OK}
+version: 1
