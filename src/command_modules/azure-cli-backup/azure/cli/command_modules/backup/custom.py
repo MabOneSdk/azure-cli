@@ -28,16 +28,24 @@ def list_containers(client, vault, container_type="AzureVM", status="Registered"
     rs_vault = get_vault_from_json(client, vault)
     resource_group = get_resource_group_from_id(rs_vault.id)
 
-    if container_type is "AzureVM":
-        container_type = "AzureIaasVM"
+    backup_management_type = get_backup_management_type(container_type)
 
-    filter_list = []
-    filter_list.append("backupManagementType eq '{}'".format(container_type))
-    filter_list.append("status eq '{}'".format(status))
-    filter_string = " and ".join(filter_list)
+    filter_string = get_filter_string({
+        'backupManagementType' : backup_management_type, 
+        'status' : status})
 
     containers = containers_mgmt_client_factory(None).list(rs_vault.name, resource_group, filter_string)
     return containers
+
+def get_backup_management_type(container_type):
+    if container_type is "AzureVM":
+        return "AzureIaasVM"
+
+def get_filter_string(filter_dict):
+    filter_list = []
+    for k, v in filter_dict.items():
+        filter_list.append("{} eq '{}'".format(k, v))
+    return " and ".join(filter_list)
 
 def get_vault_from_json(client, vault):
     param = None        
