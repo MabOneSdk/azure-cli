@@ -19,7 +19,13 @@ register_cli_argument('backup vault', 'resource_group_name', resource_group_name
 register_cli_argument('backup vault', 'vault_name', vault_name_type, options_list=('--name', '-n'))
 
 register_cli_argument('backup container', 'vault', type=file_type, help='The file containing vault specification in JSON format.', completer=FilesCompleter())
-register_cli_argument('backup container list', 'container_type', help='Container type.')
-register_cli_argument('backup container list', 'status', help='Registration status.')
+register_cli_argument('backup container show', 'container_name', help='Container name.')
 
 register_cli_argument('backup item', 'vault', type=file_type, help='The file containing vault specification in JSON format.', completer=FilesCompleter())
+register_cli_argument('backup item show', 'item_name', help='Item name.')
+register_cli_argument('backup item show', 'workload_type', help='Workload type.')
+
+for command in ['list', 'show']:
+    register_cli_argument('backup container {}'.format(command), 'container_type', help='Container type.')
+    register_cli_argument('backup container {}'.format(command), 'status', help='Registration status.')
+    register_cli_argument('backup item {}'.format(command), 'container', type=file_type, help='The file containing container specification in JSON format.', completer=FilesCompleter())
