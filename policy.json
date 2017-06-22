@@ -1,0 +1,38 @@
+{
+  "eTag": null,
+  "id": "/Subscriptions/f7424430-103b-4ba3-bd9e-b6f0986f848a/resourceGroups/pstestrg/providers/Microsoft.RecoveryServices/vaults/pstestrsvault/backupPolicies/DefaultPolicy",
+  "location": null,
+  "name": "DefaultPolicy",
+  "properties": {
+    "backupManagementType": "AzureIaasVM",
+    "protectedItemsCount": 0,
+    "retentionPolicy": {
+      "dailySchedule": {
+        "retentionDuration": {
+          "count": 30,
+          "durationType": "Days"
+        },
+        "retentionTimes": [
+          "2016-04-04T16:00:00"
+        ]
+      },
+      "monthlySchedule": null,
+      "retentionPolicyType": "LongTermRetentionPolicy",
+      "weeklySchedule": null,
+      "yearlySchedule": null
+    },
+    "schedulePolicy": {
+      "schedulePolicyType": "SimpleSchedulePolicy",
+      "scheduleRunDays": null,
+      "scheduleRunFrequency": "Daily",
+      "scheduleRunTimes": [
+        "2016-04-04T16:00:00"
+      ],
+      "scheduleWeeklyFrequency": 0
+    },
+    "timeZone": null
+  },
+  "resourceGroup": "pstestrg",
+  "tags": null,
+  "type": "Microsoft.RecoveryServices/vaults/backupPolicies"
+}
