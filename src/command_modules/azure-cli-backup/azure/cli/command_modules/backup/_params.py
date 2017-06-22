@@ -18,6 +18,13 @@ vault_name_type = CliArgumentType(help='Name of the vault.', options_list=('--va
 register_cli_argument('backup vault', 'resource_group_name', resource_group_name_type, help='Name of the resource group', completer=None, validator=None)
 register_cli_argument('backup vault', 'vault_name', vault_name_type, options_list=('--name', '-n'))
 
+register_cli_argument('backup policy', 'vault', type=file_type, help='The file containing vault specification in JSON format.', completer=FilesCompleter())
+register_cli_argument('backup policy show', 'policy_name', help='Policy name.')
+
+register_cli_argument('backup protection', 'vault', type=file_type, help='The file containing vault specification in JSON format.', completer=FilesCompleter())
+register_cli_argument('backup protection enable-for-vm', 'vm', type=file_type, help='The file containing VM specification in JSON format.', completer=FilesCompleter())
+register_cli_argument('backup protection enable-for-vm', 'policy', type=file_type, help='The file containing policy specification in JSON format.', completer=FilesCompleter())
+
 register_cli_argument('backup container', 'vault', type=file_type, help='The file containing vault specification in JSON format.', completer=FilesCompleter())
 register_cli_argument('backup container show', 'container_name', help='Container name.')
 

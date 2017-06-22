@@ -15,11 +15,31 @@ def _backup_client_factory(**_):
     
     return get_mgmt_service_client(RecoveryServicesBackupClient)
 
+def _compute_client_factory(**_):
+    from azure.cli.core.profiles import ResourceType
+    from azure.cli.core.commands.client_factory import get_mgmt_service_client
+    return get_mgmt_service_client(ResourceType.MGMT_COMPUTE)
+
 def vaults_mgmt_client_factory(_):
     return _common_client_factory().vaults
+
+def policies_mgmt_client_factory(_):
+    return _backup_client_factory().backup_policies
+
+def policy_mgmt_client_factory(_):
+    return _backup_client_factory().protection_policies
 
 def containers_mgmt_client_factory(_):
     return _backup_client_factory().backup_protection_containers
 
 def items_mgmt_client_factory(_):
     return _backup_client_factory().backup_protected_items
+
+def protectable_items_mgmt_client_factory(_):
+    return _backup_client_factory().backup_protectable_items
+
+def protected_items_mgmt_client_factory(_):
+    return _backup_client_factory().protected_items
+
+def vm_mgmt_client_factory(_):
+    return _compute_client_factory().virtual_machines
