@@ -18,6 +18,7 @@ cli_command(__name__, 'backup policy show', 'azure.cli.command_modules.backup.cu
 cli_command(__name__, 'backup policy list', 'azure.cli.command_modules.backup.custom#list_policies', vaults_mgmt_client_factory)
 
 cli_command(__name__, 'backup protection enable-for-vm', 'azure.cli.command_modules.backup.custom#enable_protection_for_vm', vaults_mgmt_client_factory)
+cli_command(__name__, 'backup protection disable', 'azure.cli.command_modules.backup.custom#disable_protection', vaults_mgmt_client_factory)
 
 cli_command(__name__, 'backup item show', 'azure.cli.command_modules.backup.custom#show_item', vaults_mgmt_client_factory)
 cli_command(__name__, 'backup item list', 'azure.cli.command_modules.backup.custom#list_items', vaults_mgmt_client_factory)

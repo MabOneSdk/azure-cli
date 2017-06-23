@@ -125,9 +125,12 @@ def enable_protection_for_vm(client, vm, vault, policy):
     vm_item_properties = AzureIaaSComputeVMProtectedItem(policy_id=policy.id, source_resource_id=protectable_item.properties.virtual_machine_id)
     vm_item = ProtectedItemResource(properties=vm_item_properties)
 
-    resp = protected_items_mgmt_client_factory(None).create_or_update(rs_vault.name, resource_group, "Azure", container_uri, item_uri, vm_item)
+    raw_response = protected_items_mgmt_client_factory(None).create_or_update(rs_vault.name, resource_group, "Azure", container_uri, item_uri, vm_item, raw=True)
 
-    return resp
+    return raw_response.headers
+
+def disable_protection(client):
+    return None
 
 ################# Private Methods
 def get_protectable_item(vault_name, vault_rg, vm_name, vm_rg):
