@@ -3,6 +3,7 @@
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
 
+import time
 import json
 
 from msrest.exceptions import DeserializationError
@@ -10,6 +11,7 @@ from msrest.exceptions import DeserializationError
 from azure.mgmt.recoveryservices.models import Vault
 from azure.mgmt.recoveryservicesbackup.models import ProtectedItemResource, AzureIaaSComputeVMProtectedItem
 
+from azure.cli.core.util import CLIError
 import azure.cli.core.azlogging as azlogging
 
 from azure.cli.command_modules.backup._client_factory import (
@@ -19,7 +21,10 @@ from azure.cli.command_modules.backup._client_factory import (
     containers_mgmt_client_factory,
     protectable_items_mgmt_client_factory,
     protected_items_mgmt_client_factory,
-    items_mgmt_client_factory)
+    items_mgmt_client_factory,
+    protection_containers_mgmt_client_factory,
+    backup_operation_statuses_mgmt_client_factory,
+    refresh_operation_results_mgmt_client_factory)
 
 logger = azlogging.get_az_logger(__name__)
 
@@ -107,33 +112,72 @@ def list_policies(client, vault):
     return get_one_or_many(get_paged_list(policies))
 
 def enable_protection_for_vm(client, vm, vault, policy):
+    # Client factories
     policy_client = policy_mgmt_client_factory(None)
-
+    protected_item_client = protected_items_mgmt_client_factory(None)
+    protection_container_client = protection_containers_mgmt_client_factory(None)
+    
+    # Get objects from JSON files
     vm = get_vm_from_json(vm_mgmt_client_factory(None), vm)
     rs_vault = get_vault_from_json(client, vault)
     resource_group = get_resource_group_from_id(rs_vault.id)
     policy = get_policy_from_json(policy_client, policy)
 
+    # VM name and resource group name
     vm_name = vm.name
     vm_rg = get_resource_group_from_id(vm.id)
     
+    # Get protectable item.
     protectable_item = get_protectable_item(rs_vault.name, resource_group, vm_name, vm_rg)
-
-    container_uri = get_container_uri_from_id(protectable_item.id)
-    item_uri = get_item_uri_from_id(protectable_item.id)
+    if protectable_item is None:
+        raise CliError("""
+The specified Azure Virtual Machine Not Found. Possible causes are
+   1. VM does not exist
+   2. The VM name or the Service name needs to be case sensitive
+   3. VM is already Protected with same or other Vault. Please Unprotect VM first and then try to protect it again.
+   
+Please contact Microsoft for further assistance.
+""")
     
+    # Construct enable protection request object
+    container_uri = get_protection_container_uri_from_id(protectable_item.id)
+    item_uri = get_protectable_item_uri_from_id(protectable_item.id)    
     vm_item_properties = AzureIaaSComputeVMProtectedItem(policy_id=policy.id, source_resource_id=protectable_item.properties.virtual_machine_id)
     vm_item = ProtectedItemResource(properties=vm_item_properties)
 
-    raw_response = protected_items_mgmt_client_factory(None).create_or_update(rs_vault.name, resource_group, "Azure", container_uri, item_uri, vm_item, raw=True)
+    # Trigger enable protection and wait for completion
+    result = protected_item_client.create_or_update(rs_vault.name, resource_group, "Azure", container_uri, item_uri, vm_item, raw=True)    
+    wait_for_backup_operation(result, rs_vault.name, resource_group)
 
-    return raw_response.headers
+def disable_protection(client, backup_item, vault):
+    # Client factories
+    items_client = items_mgmt_client_factory(None)
+    protected_item_client = protected_items_mgmt_client_factory(None)
 
-def disable_protection(client):
-    return None
+    # Get objects from JSON files
+    item = get_item_from_json(items_client, backup_item)
+    rs_vault = get_vault_from_json(client, vault)
+    resource_group = get_resource_group_from_id(rs_vault.id)
+
+    # Construct disable protection request object
+    container_uri = get_protection_container_uri_from_id(item.id)
+    item_uri = get_protected_item_uri_from_id(item.id)
+
+    # Trigger disable protection and wait for completion
+    result = protected_item_client.delete(rs_vault.name, resource_group, "Azure", container_uri, item_uri, raw=True)
+    wait_for_backup_operation(result, rs_vault.name, resource_group)
 
 ################# Private Methods
 def get_protectable_item(vault_name, vault_rg, vm_name, vm_rg):
+    protectable_item = try_get_protectable_item(vault_name, vault_rg, vm_name, vm_rg)
+    if protectable_item is None:
+        # Protectable item not found. Trigger discovery.
+        refresh_result = protection_container_client.refresh(rs_vault.name, resource_group, "Azure", raw=True)
+        wait_for_refresh(refresh_result, rs_vault.name, resource_group)
+    protectable_item = try_get_protectable_item(vault_name, vault_rg, vm_name, vm_rg)    
+    return protectable_item
+
+def try_get_protectable_item(vault_name, vault_rg, vm_name, vm_rg):
     filter_string = get_filter_string({
         'backupManagementType' : 'AzureIaasVM'})
     
@@ -145,7 +189,7 @@ def get_protectable_item(vault_name, vault_rg, vm_name, vm_rg):
         item_vm_rg = get_resource_group_from_id(protectable_item.properties.virtual_machine_id)
         if item_vm_name == vm_name and item_vm_rg == vm_rg:
             return protectable_item
-    # we're still here, do discovery
+    return None
 
 def get_paged_list(obj_list):
     from msrest.paging import Paged
@@ -187,6 +231,9 @@ def get_vm_from_json(client, vm):
 def get_policy_from_json(client, policy):
     return get_object_from_json(client, policy, 'ProtectionPolicyResource')
 
+def get_item_from_json(client, item):
+    return get_object_from_json(client, item, 'ProtectedItemResource')
+
 def get_object_from_json(client, object, class_name):
     param = None        
     with open(object) as f:
@@ -200,16 +247,22 @@ def get_object_from_json(client, object, class_name):
 
     return param
 
-def get_container_uri_from_id(id):
+def get_protection_container_uri_from_id(id):
     import re
     
     m = re.search('(?<=protectionContainers/)[^/]+'.format(str), id)
     return m.group(0)
 
-def get_item_uri_from_id(id):
+def get_protectable_item_uri_from_id(id):
     import re
     
     m = re.search('(?<=protectableItems/)[^/]+'.format(str), id)
+    return m.group(0)
+
+def get_protected_item_uri_from_id(id):
+    import re
+    
+    m = re.search('(?<=protectedItems/)[^/]+'.format(str), id)
     return m.group(0)
 
 def get_vm_name_from_vm_id(id):
@@ -223,3 +276,33 @@ def get_resource_group_from_id(id):
     
     m = re.search('(?<=resourceGroups/)[^/]+'.format(str), id)
     return m.group(0)
+
+def get_operation_id_from_header(header):
+    from urllib.parse import urlparse
+
+    parse_object = urlparse(header)
+    return parse_object.path.split("/")[-1]
+
+def wait_for_backup_operation(result, vault_name, resource_group):
+    backup_operation_status_client = backup_operation_statuses_mgmt_client_factory(None)
+
+    operation_id = get_operation_id_from_header(result.response.headers['Azure-AsyncOperation'])
+    operation_status = backup_operation_status_client.get(vault_name, resource_group, operation_id)
+    while operation_status.status == 'InProgress':
+        time.sleep(1)
+        operation_status = backup_operation_status_client.get(vault_name, resource_group, operation_id)
+
+def dict_to_str(dict):
+    str = ''
+    for k, v in dict.items():
+        str = str + "Key: {}, Value: {}\n".format(k, v)
+    return str
+
+def wait_for_refresh(result, vault_name, resource_group):
+    refresh_operation_result_client = refresh_operation_results_mgmt_client_factory(None)
+
+    operation_id = get_operation_id_from_header(result.response.headers['Location'])
+    result = refresh_operation_result_client.get(vault_name, resource_group, 'Azure', operation_id, raw=True)
+    while result.response.status_code == 202:
+        time.sleep(1)
+        result = refresh_operation_result_client.get(vault_name, resource_group, 'Azure', operation_id, raw=True)
