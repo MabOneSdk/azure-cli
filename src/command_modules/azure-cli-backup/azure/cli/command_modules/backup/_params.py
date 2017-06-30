@@ -25,6 +25,8 @@ register_cli_argument('backup protection', 'vault', type=file_type, help='The fi
 register_cli_argument('backup protection enable-for-vm', 'vm', type=file_type, help='The file containing VM specification in JSON format.', completer=FilesCompleter())
 register_cli_argument('backup protection enable-for-vm', 'policy', type=file_type, help='The file containing policy specification in JSON format.', completer=FilesCompleter())
 
+register_cli_argument('backup protection disable', 'backup_item', type=file_type, help='The file containing backup item specification in JSON format.', completer=FilesCompleter())
+
 register_cli_argument('backup container', 'vault', type=file_type, help='The file containing vault specification in JSON format.', completer=FilesCompleter())
 register_cli_argument('backup container show', 'container_name', help='Container name.')
 

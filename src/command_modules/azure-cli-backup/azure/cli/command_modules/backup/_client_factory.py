@@ -43,3 +43,12 @@ def protected_items_mgmt_client_factory(_):
 
 def vm_mgmt_client_factory(_):
     return _compute_client_factory().virtual_machines
+
+def protection_containers_mgmt_client_factory(_):
+    return _backup_client_factory().protection_containers
+
+def backup_operation_statuses_mgmt_client_factory(_):
+    return _backup_client_factory().backup_operation_statuses
+
+def refresh_operation_results_mgmt_client_factory(_):
+    return _backup_client_factory().protection_container_refresh_operation_results
