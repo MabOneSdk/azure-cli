@@ -3,52 +3,60 @@
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
 
-def _common_client_factory(**_):
-    from azure.mgmt.recoveryservices import RecoveryServicesClient
-    from azure.cli.core.commands.client_factory import get_mgmt_service_client
-    
-    return get_mgmt_service_client(RecoveryServicesClient)
-
-def _backup_client_factory(**_):
-    from azure.mgmt.recoveryservicesbackup import RecoveryServicesBackupClient
-    from azure.cli.core.commands.client_factory import get_mgmt_service_client
-    
-    return get_mgmt_service_client(RecoveryServicesBackupClient)
-
-def _compute_client_factory(**_):
+def _compute_client_factory():
     from azure.cli.core.profiles import ResourceType
     from azure.cli.core.commands.client_factory import get_mgmt_service_client
     return get_mgmt_service_client(ResourceType.MGMT_COMPUTE)
 
-def vaults_mgmt_client_factory(_):
-    return _common_client_factory().vaults
+def _common_client_factory():
+    from azure.mgmt.recoveryservices import RecoveryServicesClient
+    from azure.cli.core.commands.client_factory import get_mgmt_service_client
 
-def policies_mgmt_client_factory(_):
-    return _backup_client_factory().backup_policies
+    return get_mgmt_service_client(RecoveryServicesClient)
 
-def policy_mgmt_client_factory(_):
-    return _backup_client_factory().protection_policies
+def _backup_client_factory():
+    from azure.mgmt.recoveryservicesbackup import RecoveryServicesBackupClient
+    from azure.cli.core.commands.client_factory import get_mgmt_service_client
 
-def containers_mgmt_client_factory(_):
-    return _backup_client_factory().backup_protection_containers
+    return get_mgmt_service_client(RecoveryServicesBackupClient)
 
-def items_mgmt_client_factory(_):
-    return _backup_client_factory().backup_protected_items
+# External Deps Client Factories
 
-def protectable_items_mgmt_client_factory(_):
-    return _backup_client_factory().backup_protectable_items
-
-def protected_items_mgmt_client_factory(_):
-    return _backup_client_factory().protected_items
-
-def vm_mgmt_client_factory(_):
+def virtual_machines_cf():
     return _compute_client_factory().virtual_machines
 
-def protection_containers_mgmt_client_factory(_):
+# Internal Deps Client Factories
+
+def vaults_cf():
+    return _common_client_factory().vaults
+
+# Protection Client Factories
+
+def protection_policies_cf():
+    return _backup_client_factory().protection_policies
+
+def protection_containers_cf():
     return _backup_client_factory().protection_containers
 
-def backup_operation_statuses_mgmt_client_factory(_):
-    return _backup_client_factory().backup_operation_statuses
-
-def refresh_operation_results_mgmt_client_factory(_):
+def protection_container_refresh_operation_results_cf():
     return _backup_client_factory().protection_container_refresh_operation_results
+
+def protected_items_cf():
+    return _backup_client_factory().protected_items
+
+# Backup Client Factories
+
+def backup_policies_cf():
+    return _backup_client_factory().backup_policies
+
+def backup_protection_containers_cf():
+    return _backup_client_factory().backup_protection_containers
+
+def backup_protectable_items_cf():
+    return _backup_client_factory().backup_protectable_items
+
+def backup_protected_items_cf():
+    return _backup_client_factory().backup_protected_items
+
+def backup_operation_statuses_cf():
+    return _backup_client_factory().backup_operation_statuses
