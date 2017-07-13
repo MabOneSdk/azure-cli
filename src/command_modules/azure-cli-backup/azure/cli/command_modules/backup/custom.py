@@ -5,6 +5,8 @@
 
 import time
 import json
+import ast
+import os
 
 from msrest.exceptions import DeserializationError
 
@@ -273,18 +275,38 @@ def _get_policy_from_json(client, policy):
 def _get_item_from_json(client, item):
     return _get_object_from_json(client, item, 'ProtectedItemResource')
 
-def _get_object_from_json(client, obj, class_name):
+def _get_object_from_json(client, json_or_file, class_name):
+    # Determine if input is json or file
+    json_obj = None
+    if is_json(json_or_file):
+        json_obj = get_json_from_string(json_or_file)
+    elif os.path.exists(json_or_file):
+        with open(json_or_file) as f:
+            json_obj = json.load(f)
+    if json_obj is None:
+        raise ValueError("JSON parse failure: please provide either the json file path or json content itself")
+
+    # Deserialize json to object
     param = None
-    with open(obj) as f:
-        json_obj = json.load(f)
-        try:
-            param = client._deserialize(class_name, json_obj)  # pylint: disable=protected-access
-        except DeserializationError:
-            pass
-        if not param:
-            raise ValueError("JSON file for object '{}' is not in correct format.".format(obj))
+    try:
+        param = client._deserialize(class_name, json_obj)  # pylint: disable=protected-access
+    except DeserializationError:
+        pass
+    if param is None:
+        raise ValueError("JSON file for object '{}' is not in correct format.".format(obj))
 
     return param
+
+def is_json(content):
+    try:
+        json_object = ast.literal_eval(content)
+    except ValueError as e:
+        return False
+    return True
+
+def get_json_from_string(content):
+    content = ast.literal_eval(content)
+    return json.loads(json.dumps(content))
 
 ################# ID Utilities
 

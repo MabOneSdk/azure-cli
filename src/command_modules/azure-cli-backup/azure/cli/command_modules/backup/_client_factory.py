@@ -27,7 +27,7 @@ def virtual_machines_cf():
 
 # Internal Deps Client Factories
 
-def vaults_cf():
+def vaults_cf(_):
     return _common_client_factory().vaults
 
 # Protection Client Factories
