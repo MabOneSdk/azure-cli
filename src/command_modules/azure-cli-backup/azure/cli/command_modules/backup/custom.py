@@ -279,7 +279,7 @@ def _get_object_from_json(client, json_or_file, class_name):
     # Determine if input is json or file
     json_obj = None
     if is_json(json_or_file):
-        json_obj = get_json_from_string(json_or_file)
+        json_obj = json.loads(json_or_file)
     elif os.path.exists(json_or_file):
         with open(json_or_file) as f:
             json_obj = json.load(f)
@@ -299,14 +299,10 @@ def _get_object_from_json(client, json_or_file, class_name):
 
 def is_json(content):
     try:
-        json_object = ast.literal_eval(content)
+        json_object = json.loads(content)
     except ValueError as e:
         return False
     return True
-
-def get_json_from_string(content):
-    content = ast.literal_eval(content)
-    return json.loads(json.dumps(content))
 
 ################# ID Utilities
 

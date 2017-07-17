@@ -3,6 +3,8 @@
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
 
+import json
+
 from azure.cli.testsdk import ScenarioTest, JMESPathCheck
 
 class BackupTests(ScenarioTest):
@@ -15,10 +17,7 @@ class BackupTests(ScenarioTest):
             JMESPathCheck('resourceGroup', vault_rg)
         ]).get_output_in_json()
         
-        policy_json = self.cmd('az backup policy list --vault "{}"'.format(vault_json), checks=[
-            JMESPathCheck('name', vault_name)
+        policy_json = self.cmd('az backup policy list --vault \'{}\''.format(json.dumps(vault_json)), checks=[
+            JMESPathCheck('name', 'DefaultPolicy'),
+            JMESPathCheck('resourceGroup', vault_rg)
         ]).get_output_in_json()
-
-
-
-        pass
