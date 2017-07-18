@@ -22,5 +22,3 @@ cli_command(__name__, 'backup protection disable', 'azure.cli.command_modules.ba
 
 cli_command(__name__, 'backup item show', 'azure.cli.command_modules.backup.custom#show_item', vaults_cf)
 cli_command(__name__, 'backup item list', 'azure.cli.command_modules.backup.custom#list_items', vaults_cf)
-
-
