@@ -5,7 +5,6 @@
 
 import time
 import json
-import ast
 import os
 
 from msrest.exceptions import DeserializationError
@@ -241,8 +240,7 @@ def _get_paged_list(obj_list):
 def _get_one_or_many(obj_list):
     if len(obj_list) == 1:
         return obj_list[0]
-    else:
-        return obj_list
+    return obj_list
 
 ################# Type Utilities
 
@@ -293,14 +291,14 @@ def _get_object_from_json(client, json_or_file, class_name):
     except DeserializationError:
         pass
     if param is None:
-        raise ValueError("JSON file for object '{}' is not in correct format.".format(obj))
+        raise ValueError("JSON file for object '{}' is not in correct format.".format(json_or_file))
 
     return param
 
 def is_json(content):
     try:
-        json_object = json.loads(content)
-    except ValueError as e:
+        json.loads(content)
+    except ValueError:
         return False
     return True
 
