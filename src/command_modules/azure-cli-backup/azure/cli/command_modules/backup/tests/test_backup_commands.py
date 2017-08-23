@@ -516,6 +516,12 @@ class BackupTests(ScenarioTest):
             JMESPathCheck("length([?name == '{}'])".format(trigger_restore_job_id), 1)
         ])
 
+        self.cmd('az backup job wait --job \'{}\' --timeout 60'.format(trigger_restore_job_json))
+        self.cmd('az backup job show --job-id {} --vault \'{}\''
+                 .format(trigger_restore_job_id, vault_json), checks=[
+            JMESPathCheck("properties.status", "InProgress")
+        ])
+
         self.cmd('az backup job stop --job \'{}\''.format(trigger_restore_job_json))
 
         canceled_job = self.cmd('az backup job show --job-id {} --vault \'{}\''

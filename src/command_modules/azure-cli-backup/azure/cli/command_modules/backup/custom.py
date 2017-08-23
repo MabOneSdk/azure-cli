@@ -391,7 +391,7 @@ def stop_job(client, job):
 
     job_cancellations_client.trigger(vault_name, resource_group, job_object['name'])
 
-def wait_for_job(client, job):
+def wait_for_job(client, job, timeout=None):
     job_details_client = job_details_cf()
 
     job_object = _get_or_read_json(job)
@@ -399,8 +399,13 @@ def wait_for_job(client, job):
     vault_name = _get_vault_from_arm_id(job_object['id'])
     resource_group = _get_resource_group_from_id(job_object['id'])
 
+    start_timestamp = datetime.utcnow()
     job_details = job_details_client.get(vault_name, resource_group, job_object['name'])
     while _job_in_progress(job_details.properties.status):
+        if timeout:
+            elapsed_time = datetime.utcnow() - start_timestamp
+            if elapsed_time.seconds > timeout:
+                break
         job_details = job_details_client.get(vault_name, resource_group, job_object['name'])
         time.sleep(30)
 
