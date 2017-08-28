@@ -5,13 +5,15 @@
 
 import time
 import json
+import re
 import os
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
 from msrest.paging import Paged
 from msrest.exceptions import DeserializationError
 
 from azure.mgmt.recoveryservices.models import Vault, VaultProperties, Sku, SkuName, BackupStorageConfig, StorageModelType
-from azure.mgmt.recoveryservicesbackup.models import ProtectedItemResource, AzureIaaSComputeVMProtectedItem, AzureIaaSClassicComputeVMProtectedItem, ProtectionState, IaasVMBackupRequest, BackupRequestResource, IaasVMRestoreRequest, RestoreRequestResource, ProtectionPolicyResource, AzureIaaSVMProtectionPolicy, SimpleSchedulePolicy, SimpleRetentionPolicy, DayOfWeek, RetentionDuration, RetentionDurationType
+from azure.mgmt.recoveryservicesbackup.models import ProtectedItemResource, AzureIaaSComputeVMProtectedItem, AzureIaaSClassicComputeVMProtectedItem, ProtectionState, IaasVMBackupRequest, BackupRequestResource, IaasVMRestoreRequest, RestoreRequestResource, ProtectionPolicyResource, AzureIaaSVMProtectionPolicy, SimpleSchedulePolicy, SimpleRetentionPolicy, DayOfWeek, RetentionDuration, RetentionDurationType, BackupManagementType, WorkloadType, OperationStatusValues, JobStatus
 
 import azure.cli.core.azlogging as azlogging
 from azure.cli.core.util import CLIError
@@ -20,6 +22,9 @@ from azure.cli.command_modules.backup._client_factory import *
 
 logger = azlogging.get_az_logger(__name__)
 
+fabric_name = "Azure"
+default_policy_name = "DefaultPolicy"
+
 def create_vault(client, vault_name, region, resource_group_name):
     vault_sku = Sku(SkuName.standard)
     vault_properties = VaultProperties()
@@ -27,9 +32,7 @@ def create_vault(client, vault_name, region, resource_group_name):
     return client.create_or_update(resource_group_name, vault_name, vault)
 
 def list_vaults(client, resource_group_name=None):
-    if resource_group_name is not None:
-        return client.list_by_resource_group(resource_group_name)
-    return client.list_by_subscription_id()
+    return client.list_by_resource_group(resource_group_name) if resource_group_name else client.list_by_subscription_id()
 
 def set_backup_properties(client, vault_name, resource_group_name, backup_storage_redundancy):
     backup_storage_configs_client = backup_storage_configs_cf()
@@ -43,12 +46,7 @@ def set_backup_properties(client, vault_name, resource_group_name, backup_storag
     backup_storage_configs_client.update(resource_group_name, vault_name, backup_storage_config)
 
 def get_default_policy_for_vm(client, vault):
-    protection_policies_client = protection_policies_cf()
-
-    rs_vault = _get_vault_from_json(client, vault)
-    resource_group = _get_resource_group_from_id(rs_vault.id)
-
-    return protection_policies_client.get(rs_vault.name, resource_group, 'DefaultPolicy')
+    return show_policy(client, default_policy_name, vault)
 
 def show_policy(client, policy_name, vault):
     protection_policies_client = protection_policies_cf()
@@ -145,50 +143,25 @@ def enable_protection_for_vm(client, vault, vm, policy):
 
     # Trigger enable protection and wait for completion
     result = protected_items_client.create_or_update(
-        rs_vault.name, resource_group, "Azure", container_uri, item_uri, vm_item, raw=True)
+        rs_vault.name, resource_group, fabric_name, container_uri, item_uri, vm_item, raw=True)
     return _track_backup_operation(result, rs_vault.name, resource_group)
 
 def show_item(client, item_name, container, workload_type="AzureVM"):
-    backup_protected_items_client = backup_protected_items_cf()
-
-    container_object = _get_container_from_json(backup_protected_items_client, container)
-    vault_name = _get_vault_from_arm_id(container_object.id)
-    resource_group = _get_resource_group_from_id(container_object.id)
-
     filter_string = _get_filter_string({
         'backupManagementType' : container_object.properties.backup_management_type,
         'itemType' : _get_item_type(workload_type)})
 
-    items = backup_protected_items_client.list(vault_name, resource_group, filter_string)
-    paged_items = _get_list_from_paged_response(items)
+    items = _get_items(container, filter_string)
 
-    filtered_items = []
-    for item in paged_items:
-        if item.properties.container_name in container_object.name:
-            if item.properties.friendly_name == item_name:
-                filtered_items.append(item)
-
-    return _get_one_or_many(filtered_items)
+    return _get_one_or_many([item for item in items if item.properties.friendly_name == item_name])
 
 def list_items(client, container):
-    backup_protected_items_client = backup_protected_items_cf()
-
-    container_object = _get_container_from_json(backup_protected_items_client, container)
-    vault_name = _get_vault_from_arm_id(container_object.id)
-    resource_group = _get_resource_group_from_id(container_object.id)
-    
     filter_string = _get_filter_string({
         'backupManagementType' : container_object.properties.backup_management_type})
+    
+    items = _get_items(container, filter_string)
 
-    items = backup_protected_items_client.list(vault_name, resource_group, filter_string)
-    paged_items = _get_list_from_paged_response(items)
-
-    items_in_container = []
-    for item in paged_items:
-        if item.properties.container_name in container_object.name:
-            items_in_container.append(item)
-
-    return items_in_container
+    return items
 
 def update_policy_for_item(client, backup_item, policy):
     # Client factories
@@ -214,7 +187,7 @@ def update_policy_for_item(client, backup_item, policy):
 
     # Update policy
     result = protected_items_client.create_or_update(
-        vault_name, resource_group, "Azure", container_uri, item_uri, vm_item, raw=True)
+        vault_name, resource_group, fabric_name, container_uri, item_uri, vm_item, raw=True)
     return _track_backup_operation(result, vault_name, resource_group)
 
 def backup_now(client, backup_item, retain_until):
@@ -234,7 +207,7 @@ def backup_now(client, backup_item, retain_until):
     trigger_backup_request = BackupRequestResource(properties=trigger_backup_properties)
 
     # Trigger backup
-    result = backups_client.trigger(vault_name, resource_group, "Azure", container_uri, item_uri, trigger_backup_request, raw=True)
+    result = backups_client.trigger(vault_name, resource_group, fabric_name, container_uri, item_uri, trigger_backup_request, raw=True)
     return _track_backup_operation(result, vault_name, resource_group)
 
 def show_recovery_point(client, id, backup_item):
@@ -251,7 +224,7 @@ def show_recovery_point(client, id, backup_item):
     container_uri = _get_protection_container_uri_from_id(item.id)
     item_uri = _get_protected_item_uri_from_id(item.id)
 
-    return recovery_point_client.get(vault_name, resource_group, "Azure", container_uri, item_uri, id)
+    return recovery_point_client.get(vault_name, resource_group, fabric_name, container_uri, item_uri, id)
 
 def list_recovery_points(client, backup_item, start_date=None, end_date=None):
     # Client factories
@@ -274,7 +247,7 @@ def list_recovery_points(client, backup_item, start_date=None, end_date=None):
         'endDate' : query_end_date})
 
     # Get recovery points
-    recovery_points = recovery_point_client.list(vault_name, resource_group, "Azure", container_uri, item_uri, filter_string)
+    recovery_points = recovery_point_client.list(vault_name, resource_group, fabric_name, container_uri, item_uri, filter_string)
     paged_recovery_points = _get_list_from_paged_response(recovery_points)
 
     return paged_recovery_points
@@ -299,17 +272,12 @@ def restore_disks(client, recovery_point, destination_storage_account, destinati
     item_name = item_uri.split(';')[-1]
 
     filter_string = _get_filter_string({
-        'backupManagementType' : 'AzureIaasVM',
-        'itemType' : _get_item_type('VM')})
+        'backupManagementType' : BackupManagementType.azure_iaas_vm,
+        'itemType' : WorkloadType.vm})
     items = backup_protected_items_client.list(vault_name, resource_group, filter_string)
     paged_items = _get_list_from_paged_response(items)
 
-    filtered_items = []
-    for item in paged_items:
-        if container_name.lower() in item.properties.container_name.lower():
-            if item.properties.friendly_name.lower() == item_name.lower():
-                filtered_items.append(item)
-    
+    filtered_items = [item for item in paged_items if container_name.lower() in item.properties.container_name.lower() and item.properties.friendly_name.lower() == item_name.lower()]
     item = filtered_items[0]
 
     # Construct trigger restore request object
@@ -325,7 +293,7 @@ def restore_disks(client, recovery_point, destination_storage_account, destinati
     trigger_restore_request = RestoreRequestResource(properties=trigger_restore_properties)
 
     # Trigger restore
-    result = restore_client.trigger(vault_name, resource_group, "Azure", container_uri, item_uri, _recovery_point_id, trigger_restore_request, raw=True)
+    result = restore_client.trigger(vault_name, resource_group, fabric_name, container_uri, item_uri, _recovery_point_id, trigger_restore_request, raw=True)
     return _track_backup_operation(result, vault_name, resource_group)
 
 def disable_protection(client, backup_item, delete_backup_data=False, yes=False):
@@ -344,7 +312,7 @@ def disable_protection(client, backup_item, delete_backup_data=False, yes=False)
 
     # Trigger disable protection and wait for completion
     if delete_backup_data:
-        result = protected_items_client.delete(vault_name, resource_group, "Azure", container_uri, item_uri, raw=True)
+        result = protected_items_client.delete(vault_name, resource_group, fabric_name, container_uri, item_uri, raw=True)
         return _track_backup_operation(result, vault_name, resource_group)
     else:
         vm_item_properties = _get_vm_item_properties_from_vm_id(item.properties.virtual_machine_id)
@@ -354,7 +322,7 @@ def disable_protection(client, backup_item, delete_backup_data=False, yes=False)
         vm_item = ProtectedItemResource(properties=vm_item_properties)
 
         result = protected_items_client.create_or_update(
-            vault_name, resource_group, "Azure", container_uri, item_uri, vm_item, raw=True)
+            vault_name, resource_group, fabric_name, container_uri, item_uri, vm_item, raw=True)
         return _track_backup_operation(result, vault_name, resource_group)
 
 def list_jobs(client, vault, status=None, operation=None, start_date=None, end_date=None):
@@ -423,7 +391,7 @@ def _get_containers(client, container_type, status, vault, container_name=None):
         'backupManagementType' : backup_management_type,
         'status' : status
     }
-    if container_name is not None:
+    if container_name:
         filter_dict['friendlyName'] = container_name
     filter_string = _get_filter_string(filter_dict)
 
@@ -436,7 +404,7 @@ def _get_protectable_item(vault_name, vault_rg, vm_name, vm_rg):
     protectable_item = _try_get_protectable_item(vault_name, vault_rg, vm_name, vm_rg)
     if protectable_item is None:
         # Protectable item not found. Trigger discovery.
-        refresh_result = protection_containers_client.refresh(vault_name, vault_rg, "Azure", raw=True)
+        refresh_result = protection_containers_client.refresh(vault_name, vault_rg, fabric_name, raw=True)
         _track_refresh_operation(refresh_result, vault_name, vault_rg)
     protectable_item = _try_get_protectable_item(vault_name, vault_rg, vm_name, vm_rg)
     return protectable_item
@@ -456,6 +424,17 @@ def _try_get_protectable_item(vault_name, vault_rg, vm_name, vm_rg):
         if item_vm_name == vm_name and item_vm_rg == vm_rg:
             return protectable_item
     return None
+
+def _get_items(container, filter_string):
+    backup_protected_items_client = backup_protected_items_cf()
+    
+    container_object = _get_container_from_json(backup_protected_items_client, container)
+    vault_name = _get_vault_from_arm_id(container_object.id)
+    resource_group = _get_resource_group_from_id(container_object.id)
+    
+    items = backup_protected_items_client.list(vault_name, resource_group, filter_string)
+    paged_items = _get_list_from_paged_response(items)
+    return [item for item in paged_items if item.properties.container_name in container_object.name]
 
 def _get_storage_account_id(storage_account_name, storage_account_rg):
     resources_client = resources_cf()
@@ -503,11 +482,11 @@ def _track_backup_operation(result, vault_name, resource_group):
 
     operation_id = _get_operation_id_from_header(result.response.headers['Azure-AsyncOperation'])
     operation_status = backup_operation_statuses_client.get(vault_name, resource_group, operation_id)
-    while operation_status.status == 'InProgress':
+    while operation_status.status == OperationStatusValues.in_progress:
         time.sleep(1)
         operation_status = backup_operation_statuses_client.get(vault_name, resource_group, operation_id)
     
-    if operation_status.properties is not None:
+    if operation_status.properties:
         job_id = operation_status.properties.job_id
         job_details = job_details_client.get(vault_name, resource_group, job_id)
         return job_details
@@ -517,16 +496,14 @@ def _track_refresh_operation(result, vault_name, resource_group):
 
     operation_id = _get_operation_id_from_header(result.response.headers['Location'])
     result = protection_container_refresh_operation_results_client.get(
-        vault_name, resource_group, 'Azure', operation_id, raw=True)
+        vault_name, resource_group, fabric_name, operation_id, raw=True)
     while result.response.status_code == 202:
         time.sleep(1)
         result = protection_container_refresh_operation_results_client.get(
-            vault_name, resource_group, 'Azure', operation_id, raw=True)
+            vault_name, resource_group, fabric_name, operation_id, raw=True)
 
 def _job_in_progress(job_status):
-    if job_status == "InProgress" or job_status == "Cancelling":
-        return True
-    return False
+    return job_status == JobStatus.in_progress or job_status == JobStatus.cancelling
 
 ################# List Utilities
 
@@ -534,9 +511,7 @@ def _get_list_from_paged_response(obj_list):
     return list(obj_list) if isinstance(obj_list, Paged) else obj_list
 
 def _get_one_or_many(obj_list):
-    if len(obj_list) == 1:
-        return obj_list[0]
-    return obj_list
+    return obj_list[0] if len(obj_list) == 1 else obj_list
 
 def _get_filter_string(filter_dict):
     filter_list = []
@@ -551,13 +526,13 @@ def _get_filter_string(filter_dict):
     return " and ".join(filter_list)
 
 def _get_query_dates(end_date, start_date):
-    if start_date is not None and end_date is not None:
+    if start_date and end_date:
         query_start_date = start_date
         query_end_date = end_date
-    elif start_date is None and end_date is not None:
+    elif not start_date and end_date:
         query_end_date = end_date
         query_start_date = query_end_date - timedelta(days=30)
-    elif start_date is not None and end_date is None:
+    elif start_date and not end_date:
         query_start_date = start_date
         query_end_date = query_start_date + timedelta(days=30)
     else:
@@ -568,10 +543,10 @@ def _get_query_dates(end_date, start_date):
 ################# Type Utilities
 
 def _get_item_type(workload_type):
-    return "VM" if workload_type == "AzureVM" else None
+    return WorkloadType.vm if workload_type == "AzureVM" else None
 
 def _get_backup_management_type(container_type):
-    return "AzureIaasVM" if container_type == "AzureVM" else None
+    return BackupManagementType.azure_iaas_vm if container_type == "AzureVM" else None
 
 ################# JSON Utilities
 
@@ -628,51 +603,30 @@ def is_json(content):
 ################# ID Utilities
 
 def _get_protection_container_uri_from_id(arm_id):
-    import re
-
     m = re.search('(?<=protectionContainers/)[^/]+', arm_id)
     return m.group(0)
 
 def _get_protectable_item_uri_from_id(arm_id):
-    import re
-
     m = re.search('(?<=protectableItems/)[^/]+', arm_id)
     return m.group(0)
 
 def _get_protected_item_uri_from_id(arm_id):
-    import re
-
     m = re.search('(?<=protectedItems/)[^/]+', arm_id)
     return m.group(0)
 
 def _get_vm_name_from_vm_id(arm_id):
-    import re
-
     m = re.search('(?<=virtualMachines/)[^/]+', arm_id)
     return m.group(0)
 
 def _get_resource_group_from_id(arm_id):
-    import re
-
     m = re.search('(?<=resourceGroups/)[^/]+', arm_id)
     return m.group(0)
 
 def _get_operation_id_from_header(header):
-    from urllib.parse import urlparse
-
     parse_object = urlparse(header)
     return parse_object.path.split("/")[-1]
 
 def _get_vault_from_arm_id(arm_id):
-    import re
-
     m = re.search('(?<=vaults/)[^/]+', arm_id)
     return m.group(0)
 
-################# Dict Utilities
-
-def _dict_to_str(dictionary):
-    dict_str = ''
-    for k, v in dictionary.items():
-        dict_str = dict_str + "Key: {}, Value: {}\n".format(k, v)
-    return dict_str

@@ -16,6 +16,8 @@ from azure.cli.command_modules.backup._validators import \
 # ARGUMENT DEFINITIONS
 
 vault_name_type = CliArgumentType(help='The name of the Recovery services vault', options_list=('--vault-name',), completer=get_resource_name_completion_list('Microsoft.RecoveryServices/vaults'), id_part=None)
+
+allowed_container_types = ['AzureVM']
 allowed_workload_types = ['AzureVM']
 
 # Vault
@@ -32,8 +34,8 @@ register_cli_argument('backup vault set-backup-properties', 'backup_storage_redu
 # Container
 for command in ['list', 'show']:
     register_cli_argument('backup container {}'.format(command), 'vault', type=file_type, help='The file containing vault specification in JSON format.', completer=FilesCompleter())
-    register_cli_argument('backup container {}'.format(command), 'container_type', help='Container type.')
-    register_cli_argument('backup container {}'.format(command), 'status', help='Registration status.')
+    register_cli_argument('backup container {}'.format(command), 'container_type', help='Container type.', **enum_choice_list(allowed_container_types))
+    register_cli_argument('backup container {}'.format(command), 'status', help='Registration status.', **enum_choice_list(['Registered']))
 
 register_cli_argument('backup container show', 'container_name', help='Container name.')
 

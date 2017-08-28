@@ -32,82 +32,21 @@ class BackupTests(ScenarioTest):
     @VMPreparer()
     @StorageAccountPreparer()
     def test_backup_restore(self, resource_group, resource_group_location, vault_name, vm_name, storage_account):
-        # Test Flags
-        do_enable_protection = True
-        do_get_container = True
-        do_get_item = True
-        do_trigger_backup = True
-        do_get_recovery_point = True
-        do_trigger_restore = True
-        do_disable_protection = True
-
         vault_json = self.cmd('az backup vault show -n {} -g {}'.format(vault_name, resource_group)).get_output_in_json()
         vault_json = json.dumps(vault_json)
 
-        if do_enable_protection:
-            # Enable Protection
-            policy_json = self.cmd('az backup policy list --vault \'{}\''.format(vault_json), checks=[
-                JMESPathCheck('[0].name', 'DefaultPolicy'),
-                JMESPathCheck('[0].resourceGroup', resource_group)
-            ]).get_output_in_json()
-            policy_json = json.dumps(self._get_first_if_list(policy_json))
-            vm_json = self.cmd('az vm show -n {} -g {}'.format(vm_name, resource_group)).get_output_in_json()
-            vm_json = json.dumps(vm_json)
-            enable_protection_job_json = self.cmd('az backup protection enable-for-vm --policy \'{}\' --vault \'{}\' --vm \'{}\''
-                                                  .format(policy_json, vault_json, vm_json)).get_output_in_json()
-            enable_protection_job_json = json.dumps(enable_protection_job_json)
-            self.cmd('az backup job wait --job \'{}\''.format(enable_protection_job_json))
-
-        if do_get_container:
-            # Get Container
-            container_json = self.cmd('az backup container show --container-name \'{}\' --vault \'{}\''
-                                      .format(vm_name, vault_json)).get_output_in_json()
-            container_json = json.dumps(container_json)
-
-        if do_get_item:
-            # Get Item
-            items_json = self.cmd('az backup item list --container \'{}\''
-                                 .format(container_json)).get_output_in_json()
-            item_json = json.dumps(self._get_first_if_list(items_json))
-
-        if do_trigger_backup:
-            # Trigger Backup
-            retain_date = datetime.utcnow() + timedelta(days=30)
-            trigger_backup_job_json = self.cmd('az backup protection backup-now --backup-item \'{}\' --retain-until {}'
-                                               .format(item_json, retain_date.strftime('%d-%m-%Y'))).get_output_in_json()
-            trigger_backup_job_json = json.dumps(trigger_backup_job_json)
-            self.cmd('az backup job wait --job \'{}\''.format(trigger_backup_job_json))
-
-        if do_get_recovery_point:
-            # Get Recovery Point
-            recovery_points_json = self.cmd('az backup recoverypoint list --backup-item \'{}\''
-                                            .format(item_json)).get_output_in_json()
-            recovery_point_json = json.dumps(self._get_first_if_list(recovery_points_json))
-        
-        if do_trigger_restore:
-            # Trigger Restore
-            trigger_restore_job_json = self.cmd('az backup restore disks --recovery-point \'{}\' --destination-storage-account {} --destination-storage-account-resource-group {}'
-                                                .format(recovery_point_json, storage_account, resource_group)).get_output_in_json()
-            trigger_restore_job_json = json.dumps(trigger_restore_job_json)
-            self.cmd('az backup job wait --job \'{}\''.format(trigger_restore_job_json))
-
-        if do_disable_protection:
-            # Disable Protection
-            disable_protection_job_json = self.cmd('az backup protection disable --backup-item \'{}\' --yes'
-                                                   .format(item_json)).get_output_in_json()
-            disable_protection_job_json = json.dumps(disable_protection_job_json)
-            self.cmd('az backup job wait --job \'{}\''.format(disable_protection_job_json))
-
-    @ResourceGroupPreparer(parameter_name='sa_rg')
-    @StorageAccountPreparer(resource_group_parameter_name='sa_rg')
-    def test_backup_adhoc(self, storage_account, sa_rg):
-        resource_group = 'clitest.rghhpafaki7aj2kmdr4oefm2oc3g2n4ylngaybkba2i2b6dpjj2q7hjptd3k46yccsd'
-        vm_name = 'clitest-vm23wmz'
-        vault_name = 'clitest-vault63alquyh3vy'
-
-        # Get Vault
-        vault_json = self.cmd('az backup vault show -n {} -g {}'.format(vault_name, resource_group)).get_output_in_json()
-        vault_json = json.dumps(vault_json)
+        # Enable Protection
+        policy_json = self.cmd('az backup policy list --vault \'{}\''.format(vault_json), checks=[
+            JMESPathCheck('[0].name', 'DefaultPolicy'),
+            JMESPathCheck('[0].resourceGroup', resource_group)
+        ]).get_output_in_json()
+        policy_json = json.dumps(self._get_first_if_list(policy_json))
+        vm_json = self.cmd('az vm show -n {} -g {}'.format(vm_name, resource_group)).get_output_in_json()
+        vm_json = json.dumps(vm_json)
+        enable_protection_job_json = self.cmd('az backup protection enable-for-vm --policy \'{}\' --vault \'{}\' --vm \'{}\''
+                                                .format(policy_json, vault_json, vm_json)).get_output_in_json()
+        enable_protection_job_json = json.dumps(enable_protection_job_json)
+        self.cmd('az backup job wait --job \'{}\''.format(enable_protection_job_json))
 
         # Get Container
         container_json = self.cmd('az backup container show --container-name \'{}\' --vault \'{}\''
@@ -119,16 +58,29 @@ class BackupTests(ScenarioTest):
                                 .format(container_json)).get_output_in_json()
         item_json = json.dumps(self._get_first_if_list(items_json))
 
+        # Trigger Backup
+        retain_date = datetime.utcnow() + timedelta(days=30)
+        trigger_backup_job_json = self.cmd('az backup protection backup-now --backup-item \'{}\' --retain-until {}'
+                                            .format(item_json, retain_date.strftime('%d-%m-%Y'))).get_output_in_json()
+        trigger_backup_job_json = json.dumps(trigger_backup_job_json)
+        self.cmd('az backup job wait --job \'{}\''.format(trigger_backup_job_json))
+
         # Get Recovery Point
         recovery_points_json = self.cmd('az backup recoverypoint list --backup-item \'{}\''
                                         .format(item_json)).get_output_in_json()
         recovery_point_json = json.dumps(self._get_first_if_list(recovery_points_json))
-
+        
         # Trigger Restore
         trigger_restore_job_json = self.cmd('az backup restore disks --recovery-point \'{}\' --destination-storage-account {} --destination-storage-account-resource-group {}'
-                                            .format(recovery_point_json, storage_account, sa_rg)).get_output_in_json()
+                                            .format(recovery_point_json, storage_account, resource_group)).get_output_in_json()
         trigger_restore_job_json = json.dumps(trigger_restore_job_json)
         self.cmd('az backup job wait --job \'{}\''.format(trigger_restore_job_json))
+
+        # Disable Protection
+        disable_protection_job_json = self.cmd('az backup protection disable --backup-item \'{}\' --yes'
+                                                .format(item_json)).get_output_in_json()
+        disable_protection_job_json = json.dumps(disable_protection_job_json)
+        self.cmd('az backup job wait --job \'{}\''.format(disable_protection_job_json))
 
     @ResourceGroupPreparer()
     @VaultPreparer(parameter_name='vault1')
