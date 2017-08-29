@@ -7,7 +7,7 @@ from azure.cli.core.help_files import helps
 
 helps['backup'] = """
             type: group
-            short-summary: Backup commands.
+            short-summary: Commands to manage Azure Backups.
             """
 
 helps['backup vault'] = """
