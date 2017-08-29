@@ -142,7 +142,7 @@ helps['backup restore disks'] = """
 
 helps['backup job'] = """
             type: group
-            short-summary: Entity which contains the details of the 
+            short-summary: Entity which contains the details of the
             """
 
 helps['backup job list'] = """
