@@ -112,7 +112,7 @@ helps['backup recoverypoint show'] = """
 
 helps['backup protection'] = """
             type: group
-            short-summary: Manage protection of your items: enable protection or disable it, or take on-demand backups
+            short-summary: Manage protection of your items, enable protection or disable it, or take on-demand backups
             """
 
 helps['backup protection enable-for-vm'] = """
