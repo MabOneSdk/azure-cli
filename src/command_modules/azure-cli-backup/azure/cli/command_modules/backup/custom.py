@@ -122,12 +122,15 @@ def enable_protection_for_vm(client, vault, vm, policy):
     resource_group = _get_resource_group_from_id(rs_vault.id)
     policy = _get_policy_from_json(protection_policies_client, policy)
 
+    if policy.properties.backup_management_type != BackupManagementType.azure_iaas_vm.value:
+        raise CLIError("Pass Policy for Iaas VM")
+
     # VM name and resource group name
     vm_name = vm.name
     vm_rg = _get_resource_group_from_id(vm.id)
 
     # Get protectable item.
-    protectable_item = _get_protectable_item(rs_vault.name, resource_group, vm_name, vm_rg)
+    protectable_item = _get_protectable_item_for_vm(rs_vault.name, resource_group, vm_name, vm_rg)
     if protectable_item is None:
         raise CLIError(
             """
@@ -142,7 +145,7 @@ def enable_protection_for_vm(client, vault, vm, policy):
 
     # Construct enable protection request object
     container_uri = _get_protection_container_uri_from_id(protectable_item.id)
-    item_uri = _get_protectable_item_uri_from_id(protectable_item.id)
+    item_uri = _get_protectable_item_for_vm_uri_from_id(protectable_item.id)
     vm_item_properties = _get_vm_item_properties_from_vm_type(vm.type)
     vm_item_properties.policy_id = policy.id
     vm_item_properties.source_resource_id = protectable_item.properties.virtual_machine_id
@@ -186,6 +189,9 @@ def update_policy_for_item(client, backup_item, policy):
     resource_group = _get_resource_group_from_id(item.id)
     policy_object = _get_policy_from_json(protection_policies_client, policy)
 
+    if item.properties.backup_management_type != policy_object.properties.backup_management_type:
+        raise CLIError("Item and Policy Backup Management Types should match")
+
     # Get container and item URIs
     container_uri = _get_protection_container_uri_from_id(item.id)
     item_uri = _get_protected_item_uri_from_id(item.id)
@@ -214,8 +220,7 @@ def backup_now(client, backup_item, retain_until):
     # Get container and item URIs
     container_uri = _get_protection_container_uri_from_id(item.id)
     item_uri = _get_protected_item_uri_from_id(item.id)
-    trigger_backup_properties = IaasVMBackupRequest(recovery_point_expiry_time_in_utc=retain_until)
-    trigger_backup_request = BackupRequestResource(properties=trigger_backup_properties)
+    trigger_backup_request = _get_backup_request(item.properties.workload_type, retain_until)
 
     # Trigger backup
     result = client.trigger(vault_name, resource_group, fabric_name, container_uri, item_uri,
@@ -327,11 +332,7 @@ def disable_protection(client, backup_item, delete_backup_data=False, yes=False)
         result = client.delete(vault_name, resource_group, fabric_name, container_uri, item_uri, raw=True)
         return _track_backup_operation(result, vault_name, resource_group)
 
-    vm_item_properties = _get_vm_item_properties_from_vm_id(item.properties.virtual_machine_id)
-    vm_item_properties.policy_id = ''
-    vm_item_properties.protection_state = ProtectionState.protection_stopped
-    vm_item_properties.source_resource_id = item.properties.source_resource_id
-    vm_item = ProtectedItemResource(properties=vm_item_properties)
+    vm_item = _get_disable_protection_request(item)
 
     result = client.create_or_update(
         vault_name, resource_group, fabric_name, container_uri, item_uri, vm_item, raw=True)
@@ -406,19 +407,19 @@ def _get_containers(client, container_type, status, vault, container_name=None):
     return _get_list_from_paged_response(containers)
 
 
-def _get_protectable_item(vault_name, vault_rg, vm_name, vm_rg):
+def _get_protectable_item_for_vm(vault_name, vault_rg, vm_name, vm_rg):
     protection_containers_client = protection_containers_cf()
 
-    protectable_item = _try_get_protectable_item(vault_name, vault_rg, vm_name, vm_rg)
+    protectable_item = _try_get_protectable_item_for_vm(vault_name, vault_rg, vm_name, vm_rg)
     if protectable_item is None:
         # Protectable item not found. Trigger discovery.
         refresh_result = protection_containers_client.refresh(vault_name, vault_rg, fabric_name, raw=True)
         _track_refresh_operation(refresh_result, vault_name, vault_rg)
-    protectable_item = _try_get_protectable_item(vault_name, vault_rg, vm_name, vm_rg)
+    protectable_item = _try_get_protectable_item_for_vm(vault_name, vault_rg, vm_name, vm_rg)
     return protectable_item
 
 
-def _try_get_protectable_item(vault_name, vault_rg, vm_name, vm_rg):
+def _try_get_protectable_item_for_vm(vault_name, vault_rg, vm_name, vm_rg):
     backup_protectable_items_client = backup_protectable_items_cf()
 
     filter_string = _get_filter_string({
@@ -446,6 +447,13 @@ def _get_items(container_object, filter_string):
     return [item for item in paged_items if item.properties.container_name in container_object.name]
 
 
+def _get_backup_request(workload_type, retain_until):
+    if workload_type == WorkloadType.vm.value:
+        trigger_backup_properties = IaasVMBackupRequest(recovery_point_expiry_time_in_utc=retain_until)
+    trigger_backup_request = BackupRequestResource(properties=trigger_backup_properties)
+    return trigger_backup_request
+
+
 def _get_storage_account_id(storage_account_name, storage_account_rg):
     resources_client = resources_cf()
     classic_storage_resource_namespace = 'Microsoft.ClassicStorage'
@@ -464,6 +472,16 @@ def _get_storage_account_id(storage_account_name, storage_account_rg):
         storage_account = resources_client.get(storage_account_rg, storage_resource_namespace, parent_resource_path,
                                                resource_type, storage_account_name, api_version)
     return storage_account.id
+
+
+def _get_disable_protection_request(item):
+    if item.properties.workload_type == WorkloadType.vm.value:
+        vm_item_properties = _get_vm_item_properties_from_vm_id(item.properties.virtual_machine_id)
+        vm_item_properties.policy_id = ''
+        vm_item_properties.protection_state = ProtectionState.protection_stopped
+        vm_item_properties.source_resource_id = item.properties.source_resource_id
+        vm_item = ProtectedItemResource(properties=vm_item_properties)
+        return vm_item
 
 
 def _get_vm_item_properties_from_vm_type(vm_type):
