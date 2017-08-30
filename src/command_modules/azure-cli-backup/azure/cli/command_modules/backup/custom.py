@@ -44,12 +44,7 @@ def list_vaults(client, resource_group_name=None):
 
 
 def set_backup_properties(client, vault_name, resource_group_name, backup_storage_redundancy):
-    storage_model_types = [e.value for e in StorageModelType]
-    if backup_storage_redundancy not in storage_model_types:
-        raise CLIError('Incorrect storage model type passed. Value should be one of {}'.format(storage_model_types))
-
     backup_storage_config = BackupStorageConfig(storage_model_type=backup_storage_redundancy)
-
     client.update(resource_group_name, vault_name, backup_storage_config)
 
 
@@ -145,7 +140,7 @@ def enable_protection_for_vm(client, vault, vm, policy):
 
     # Construct enable protection request object
     container_uri = _get_protection_container_uri_from_id(protectable_item.id)
-    item_uri = _get_protectable_item_for_vm_uri_from_id(protectable_item.id)
+    item_uri = _get_protectable_item_uri_from_id(protectable_item.id)
     vm_item_properties = _get_vm_item_properties_from_vm_type(vm.type)
     vm_item_properties.policy_id = policy.id
     vm_item_properties.source_resource_id = protectable_item.properties.virtual_machine_id
