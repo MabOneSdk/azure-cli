@@ -483,7 +483,7 @@ def _get_items(container_object, filter_string):
 
     items = backup_protected_items_client.list(vault_name, resource_group, filter_string)
     paged_items = _get_list_from_paged_response(items)
-    return [item for item in paged_items if item.properties.container_name in container_object.name]
+    return [item for item in paged_items if item.properties.container_name.lower() in container_object.name.lower()]
 
 
 def _get_backup_request(workload_type, retain_until):
@@ -548,8 +548,8 @@ def _get_associated_vm_item(container_uri, item_uri, resource_group, vault_name)
     paged_items = _get_list_from_paged_response(items)
     
     filtered_items = [item for item in paged_items
-                      if container_name in item.properties.container_name and
-                      item.properties.friendly_name.lower() == item_name]
+                      if container_name.lower() in item.properties.container_name.lower() and
+                      item.properties.friendly_name.lower() == item_name.lower()]
     item = filtered_items[0]
     return item
 
