@@ -35,6 +35,8 @@ fabric_name = "Azure"
 default_policy_name = "DefaultPolicy"
 os_windows = 'Windows'
 os_linux = 'Linux'
+password_offset = 33
+password_length = 15
 
 
 def create_vault(client, vault_name, region, resource_group_name):
@@ -573,38 +575,46 @@ def _get_host_os():
     return platform.system()
 
 
+def _remove_password_from_suffix(suffix):
+    password_segment_index = suffix.rfind('_')
+    password_start_index = password_segment_index + password_offset
+    password_end_index = password_segment_index + password_offset + password_length
+    password = suffix[password_start_index : password_end_index]
+    suffix = suffix[:password_start_index] + suffix[password_end_index:]
+    return suffix, password
+
+
+def _get_script_file_name_and_password(script):
+    suffix, password = _remove_password_from_suffix(script.script_name_suffix)
+    return suffix + script.script_extension, password
+
+
 def _run_client_script_for_windows(client_scripts):
     windows_script = client_scripts[1]
-    file_name = windows_script.script_name_suffix + windows_script.script_extension
+    file_name, password = _get_script_file_name_and_password(windows_script)
     
     # Create File
     import urllib.request
     import shutil
     with urllib.request.urlopen(windows_script.url) as response, open(file_name, 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
-    
-    if _get_host_os() == os_windows:
-        # Execute File
-        _run_executable(file_name)
+
+    logger.info('File downloaded: {}. Use password {}'.format(file_name, password))
 
 
 def _run_client_script_for_linux(client_scripts, vm_name, recovery_point_time):
     linux_script = client_scripts[0]
-    
+    file_name, password = _get_script_file_name_and_password(linux_script)
+
     # Create File
     import base64
     script_content = base64.b64decode(linux_script.script_content)
     script_content = script_content.decode('utf-8')
-    file_name = '{}_{}{}'.format(linux_script.os_type,
-                                    vm_name,
-                                    linux_script.script_extension)
+    
     with open(file_name, 'w') as out_file:
         out_file.write(script_content)
 
-    if _get_host_os() == os_linux:
-        # Execute File
-        _run_executable(file_name)
-
+    logger.info('File downloaded: {}. Use password {}'.format(file_name, password))
 
 # Tracking Utilities
 
