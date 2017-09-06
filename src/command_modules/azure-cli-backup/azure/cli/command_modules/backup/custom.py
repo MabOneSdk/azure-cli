@@ -584,7 +584,7 @@ def _remove_password_from_suffix(suffix):
     password_segment_index = suffix.rfind('_')
     password_start_index = password_segment_index + password_offset
     password_end_index = password_segment_index + password_offset + password_length
-    password = suffix[password_start_index : password_end_index]
+    password = suffix[password_start_index: password_end_index]
     suffix = suffix[:password_start_index] + suffix[password_end_index:]
     return suffix, password
 
