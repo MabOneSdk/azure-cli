@@ -11,7 +11,7 @@ from azure.cli.core.commands import cli_command
 from azure.cli.command_modules.backup._client_factory import vaults_cf, backup_protection_containers_cf, \
     protection_policies_cf, backup_policies_cf, protected_items_cf, backups_cf, backup_protected_items_cf, \
     backup_jobs_cf, job_details_cf, job_cancellations_cf, recovery_points_cf, restores_cf, backup_storage_configs_cf, \
-    item_level_recovery_connections_cf
+    item_level_recovery_connections_cf  # pylint: disable=unused-variable
 
 
 def transform_container(result):
