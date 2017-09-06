@@ -8,7 +8,10 @@ import json
 import re
 import os
 from datetime import datetime, timedelta
-from urllib.parse import urlparse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 from msrest.paging import Paged
 
 from azure.mgmt.recoveryservices.models import Vault, VaultProperties, Sku, SkuName, BackupStorageConfig, \
