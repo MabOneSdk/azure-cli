@@ -383,8 +383,8 @@ class BackupTests(ScenarioTest):
                                                    JMESPathCheck("properties.entityFriendlyName", vm_name),
                                                    JMESPathCheck("properties.operation", "Restore"),
                                                    JMESPathCheck("properties.status", "Completed"),
-                                                   JMESPathCheck("resourceGroup", resource_group)])\
-                                                   .get_output_in_json()
+                                                   JMESPathCheck("resourceGroup", resource_group)
+                                               ]).get_output_in_json()
 
         property_bag = trigger_restore_job_details['properties']['extendedInfo']['propertyBag']
         assert property_bag['Target Storage Account Name'] == storage_account

@@ -13,12 +13,15 @@ from azure.cli.command_modules.backup._client_factory import vaults_cf, backup_p
     backup_jobs_cf, job_details_cf, job_cancellations_cf, recovery_points_cf, restores_cf, backup_storage_configs_cf, \
     item_level_recovery_connections_cf
 
+
 def transform_container(result):
     return OrderedDict([('name', result['properties']['friendlyName']),
                         ('resourceGroup', result['resourceGroup'])])
 
+
 def transform_container_list(container_list):
     return [transform_container(c) for c in container_list]
+
 
 cli_command(__name__, 'backup vault create', 'azure.cli.command_modules.backup.custom#create_vault', vaults_cf)
 cli_command(__name__, 'backup vault show', 'azure.mgmt.recoveryservices.operations.vaults_operations#VaultsOperations.get', vaults_cf)
