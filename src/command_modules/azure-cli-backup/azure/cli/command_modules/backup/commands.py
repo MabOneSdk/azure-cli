@@ -21,8 +21,21 @@ def transform_container(result):
                         ('Registration Status', result['properties']['registrationStatus'])])
 
 
+def transform_item(result):
+    return OrderedDict([('Name', result['properties']['friendlyName']),
+                        ('Resource Group', result['resourceGroup']),
+                        ('Type', result['properties']['workloadType']),
+                        ('Last Backup Status', result['properties']['lastBackupStatus']),
+                        ('Last Recovery Point', result['properties']['lastRecoveryPoint']),
+                        ('Protection Status', result['properties']['protectionStatus'])])
+
+
 def transform_container_list(container_list):
     return [transform_container(c) for c in container_list]
+
+
+def transform_item_list(item_list):
+    return [transform_item(i) for i in item_list]
 
 
 cli_command(__name__, 'backup vault create', 'azure.cli.command_modules.backup.custom#create_vault', vaults_cf)
@@ -47,7 +60,7 @@ cli_command(__name__, 'backup protection backup-now', 'azure.cli.command_modules
 cli_command(__name__, 'backup protection disable', 'azure.cli.command_modules.backup.custom#disable_protection', protected_items_cf, confirmation=True)
 
 cli_command(__name__, 'backup item show', 'azure.cli.command_modules.backup.custom#show_item', backup_protected_items_cf)
-cli_command(__name__, 'backup item list', 'azure.cli.command_modules.backup.custom#list_items', backup_protected_items_cf)
+cli_command(__name__, 'backup item list', 'azure.cli.command_modules.backup.custom#list_items', backup_protected_items_cf, table_transformer=transform_item_list)
 cli_command(__name__, 'backup item update-policy', 'azure.cli.command_modules.backup.custom#update_policy_for_item', protected_items_cf)
 
 cli_command(__name__, 'backup job list', 'azure.cli.command_modules.backup.custom#list_jobs', backup_jobs_cf)

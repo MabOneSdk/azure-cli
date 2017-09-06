@@ -8,10 +8,7 @@ import json
 import re
 import os
 from datetime import datetime, timedelta
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
+from six.moves.urllib.parse import urlparse  # pylint: disable=import-error
 from msrest.paging import Paged
 
 from azure.mgmt.recoveryservices.models import Vault, VaultProperties, Sku, SkuName, BackupStorageConfig
@@ -169,12 +166,12 @@ def enable_protection_for_vm(client, vault, vm, policy):
     return _track_backup_job(result, rs_vault.name, resource_group)
 
 
-def show_item(client, item_name, container, workload_type="AzureVM"):
+def show_item(client, item_name, container, workload_type="VM"):
     container_object = _get_container_from_json(client, container)
 
     filter_string = _get_filter_string({
         'backupManagementType': container_object.properties.backup_management_type,
-        'itemType': _get_item_type(workload_type)})
+        'itemType': workload_type})
 
     items = _get_items(container_object, filter_string)
 
@@ -716,12 +713,6 @@ def _get_query_dates(end_date, start_date):
         query_end_date = datetime.utcnow()
         query_start_date = query_end_date - timedelta(days=30)
     return query_end_date, query_start_date
-
-# Type Utilities
-
-
-def _get_item_type(workload_type):
-    return WorkloadType.vm.value if workload_type == "AzureVM" else None
 
 # JSON Utilities
 
