@@ -331,7 +331,7 @@ def restore_files_mount_rp(client, recovery_point):
     if client_scripts[0].os_type == 'Windows':
         _run_client_script_for_windows(client_scripts)
     elif client_scripts[0].os_type == 'Linux':
-        pass
+        _run_client_script_for_linux(client_scripts)
 
 
 def restore_files_unmount_rp(client, recovery_point):
@@ -470,7 +470,7 @@ def _try_get_protectable_item_for_vm(vault_name, vault_rg, vm_name, vm_rg):
     for protectable_item in protectable_items:
         item_vm_name = _get_vm_name_from_vm_id(protectable_item.properties.virtual_machine_id)
         item_vm_rg = _get_resource_group_from_id(protectable_item.properties.virtual_machine_id)
-        if item_vm_name == vm_name.lower() and item_vm_rg == vm_rg.lower():
+        if item_vm_name.lower() == vm_name.lower() and item_vm_rg.lower() == vm_rg.lower():
             return protectable_item
     return None
 
@@ -555,16 +555,37 @@ def _get_associated_vm_item(container_uri, item_uri, resource_group, vault_name)
 
 
 def _run_client_script_for_windows(client_scripts):
-    win_script = client_scripts[1]
-    file_name = win_script.script_name_suffix + win_script.script_extension
+    windows_script = client_scripts[1]
+    file_name = windows_script.script_name_suffix + windows_script.script_extension
+    
+    # Create File
     import urllib.request
     import shutil
-    
-    with urllib.request.urlopen(win_script.url) as response, open(file_name, 'wb') as out_file:
+    with urllib.request.urlopen(windows_script.url) as response, open(file_name, 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
     
+    # Execute File
     import os
     os.system('{}'.format(file_name))
+
+
+def _run_client_script_for_linux(client_scripts):
+    linux_script = client_scripts[0]
+    
+    # Create File
+    import base64
+    script_content = base64.b64decode(linux_script.script_content)
+    file_name = '{}_{}_{}{}'.format(linux_script.os_type,
+                                  vm_name,
+                                  recovery_point_time,
+                                  linux_script.script_extension)
+    with open(file_name, 'w') as out_file:
+        out_file.write(script_content)
+
+    # Execute File
+    import subprocess
+    subprocess.call('{}'.format(file_name))
+
 
 # Tracking Utilities
 
