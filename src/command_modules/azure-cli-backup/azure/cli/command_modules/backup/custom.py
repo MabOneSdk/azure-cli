@@ -23,7 +23,7 @@ from azure.cli.core.util import CLIError
 from azure.cli.command_modules.backup._client_factory import vaults_cf, backup_protected_items_cf, \
     protection_policies_cf, virtual_machines_cf, recovery_points_cf, protection_containers_cf, \
     backup_protectable_items_cf, resources_cf, backup_operation_statuses_cf, job_details_cf, \
-    protection_container_refresh_operation_results_cf, backup_protection_containers_cf
+    protection_container_refresh_operation_results_cf
 
 logger = azlogging.get_az_logger(__name__)
 
@@ -167,7 +167,7 @@ def enable_protection_for_vm(client, vault, vm, policy):
 
 
 def show_item(client, item_name, container, workload_type="VM"):
-    container_object = _get_container_from_json(backup_protection_containers_cf(None), container)
+    container_object = _get_container_from_json(client, container)
 
     filter_string = _get_filter_string({
         'backupManagementType': container_object.properties.backup_management_type,
@@ -179,7 +179,7 @@ def show_item(client, item_name, container, workload_type="VM"):
 
 
 def list_items(client, container, workload_type="VM"):
-    container_object = _get_container_from_json(backup_protection_containers_cf(None), container)
+    container_object = _get_container_from_json(client, container)
 
     filter_string = _get_filter_string({
         'backupManagementType': container_object.properties.backup_management_type,
@@ -611,7 +611,7 @@ def _run_client_script_for_windows(client_scripts):
     with urlopen(windows_script.url) as response, open(file_name, 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
 
-    print('File downloaded: {}. Use password {}'.format(file_name, password))
+    logger.warning('File downloaded: {}. Use password {}'.format(file_name, password))
 
 
 def _run_client_script_for_linux(client_scripts):
@@ -626,7 +626,7 @@ def _run_client_script_for_linux(client_scripts):
     with open(file_name, 'w') as out_file:
         out_file.write(script_content)
 
-    print('File downloaded: {}. Use password {}'.format(file_name, password))
+    logger.warning('File downloaded: {}. Use password {}'.format(file_name, password))
 
 # Tracking Utilities
 
