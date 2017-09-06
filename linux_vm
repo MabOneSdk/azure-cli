@@ -1,0 +1,73 @@
+{
+  "availabilitySet": null,
+  "diagnosticsProfile": null,
+  "hardwareProfile": {
+    "vmSize": "Standard_DS1_v2"
+  },
+  "id": "/subscriptions/f7424430-103b-4ba3-bd9e-b6f0986f848a/resourceGroups/PythonSDKTestRg/providers/Microsoft.Compute/virtualMachines/cliCAPSvm1",
+  "identity": null,
+  "instanceView": null,
+  "licenseType": null,
+  "location": "westus",
+  "name": "cliCAPSvm1",
+  "networkProfile": {
+    "networkInterfaces": [
+      {
+        "id": "/subscriptions/f7424430-103b-4ba3-bd9e-b6f0986f848a/resourceGroups/PythonSDKTestRg/providers/Microsoft.Network/networkInterfaces/cliCAPSvm1VMNic",
+        "primary": null,
+        "resourceGroup": "PythonSDKTestRg"
+      }
+    ]
+  },
+  "osProfile": {
+    "adminPassword": null,
+    "adminUsername": "anudeeb",
+    "computerName": "cliCAPSvm1",
+    "customData": null,
+    "linuxConfiguration": {
+      "disablePasswordAuthentication": true,
+      "ssh": {
+        "publicKeys": [
+          {
+            "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCkJ0z2mCRTB9MrKix247GEbVhkFuF+DMXi/Pd3hmvaqDhvJMdnQ2huzXEBqjzLzIkC2JiN6TIC2Mz3xDGqSsWHtJ0deBxGC11V7NIcbbvFS+CBEbL0K95AcLKYOgxq+y8VDjRugoLFnOcyqXJTKFqk3lu9odSM6KNr5ahiJmkb81fBuqrs61MA0ql+Ow5O8/Nf6UKOs8XM08NICMcV/xDacEbILkSPcHEj1CmxEL8ze76Zs2HJ4o7wNSWWT1Cg13WSkzlfKsSDBB0Ve6KHell53sGf+J+w6gudJvkC4GzAWvYc0gG5yxnxjjbdN75qObxVwaQpXdeZtms42U2ygUoh",
+            "path": "/home/anudeeb/.ssh/authorized_keys"
+          }
+        ]
+      }
+    },
+    "secrets": [],
+    "windowsConfiguration": null
+  },
+  "plan": null,
+  "provisioningState": "Succeeded",
+  "resourceGroup": "PythonSDKTestRg",
+  "resources": null,
+  "storageProfile": {
+    "dataDisks": [],
+    "imageReference": {
+      "id": null,
+      "offer": "UbuntuServer",
+      "publisher": "Canonical",
+      "sku": "16.04-LTS",
+      "version": "latest"
+    },
+    "osDisk": {
+      "caching": "ReadWrite",
+      "createOption": "fromImage",
+      "diskSizeGb": 30,
+      "encryptionSettings": null,
+      "image": null,
+      "managedDisk": {
+        "id": "/subscriptions/f7424430-103b-4ba3-bd9e-b6f0986f848a/resourceGroups/PythonSDKTestRg/providers/Microsoft.Compute/disks/osdisk_b581658116",
+        "resourceGroup": "PythonSDKTestRg",
+        "storageAccountType": "Premium_LRS"
+      },
+      "name": "osdisk_b581658116",
+      "osType": "Linux",
+      "vhd": null
+    }
+  },
+  "tags": {},
+  "type": "Microsoft.Compute/virtualMachines",
+  "vmId": "2a19797c-dc38-4033-8d96-2bb3ebb781ec"
+}

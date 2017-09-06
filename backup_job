@@ -1,0 +1,52 @@
+{
+  "eTag": null,
+  "id": "/Subscriptions/f7424430-103b-4ba3-bd9e-b6f0986f848a/resourceGroups/PsTestRg/providers/Microsoft.RecoveryServices/vaults/SDKTestRsVault/backupJobs/23cfaa9e-f80c-41fa-ada8-27afc6f8f260",
+  "location": null,
+  "name": "23cfaa9e-f80c-41fa-ada8-27afc6f8f260",
+  "properties": {
+    "actionsInfo": [
+      "Cancellable"
+    ],
+    "activityId": "dcb0d936-92f5-11e7-a05b-8cdcd428ae4b",
+    "backupManagementType": "AzureIaasVM",
+    "duration": "0:00:02.482227",
+    "endTime": null,
+    "entityFriendlyName": "xpt-vm16951",
+    "errorDetails": null,
+    "extendedInfo": {
+      "dynamicErrorMessage": null,
+      "progressPercentage": null,
+      "propertyBag": {
+        "VM Name": "xpt-vm16951"
+      },
+      "tasksList": [
+        {
+          "duration": "0:00:00",
+          "endTime": null,
+          "instanceId": null,
+          "progressPercentage": null,
+          "startTime": null,
+          "status": "InProgress",
+          "taskId": "Take Snapshot"
+        },
+        {
+          "duration": "0:00:00",
+          "endTime": null,
+          "instanceId": null,
+          "progressPercentage": null,
+          "startTime": null,
+          "status": "NotStarted",
+          "taskId": "Transfer data to vault"
+        }
+      ]
+    },
+    "jobType": "AzureIaaSVMJob",
+    "operation": "Backup",
+    "startTime": "2017-09-06T11:23:55.919651+00:00",
+    "status": "InProgress",
+    "virtualMachineVersion": "Compute"
+  },
+  "resourceGroup": "PsTestRg",
+  "tags": null,
+  "type": "Microsoft.RecoveryServices/vaults/backupJobs"
+}

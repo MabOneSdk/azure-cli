@@ -1,0 +1,25 @@
+[09/06/2017 17:30:54] :pspagetest1
+[09/06/2017 17:30:54] :pspagetest1
+[09/06/2017 17:30:54] :MicrosoftWindows10Enterprise
+[09/06/2017 17:30:54] :10.0.15063.0
+[09/06/2017 17:30:54] :False
+[09/06/2017 17:30:54] :D:\MabOneSdk\azure-cli\pspagetest1-20170906175330
+[09/06/2017 17:30:54] :D:\MabOneSdk\azure-cli\pspagetest1-20170906175330\MicrosoftAzureBackupILRLogFile.log
+[09/06/2017 17:30:54] :False
+[09/06/2017 17:30:54] :pod01-rec2.wus.backup.windowsazure.com
+[09/06/2017 17:30:54] :3260
+[09/06/2017 17:30:54] :MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4
+[09/06/2017 17:30:54] :402955932679
+[09/06/2017 17:30:54] :4d3c6cc2-0721-4201-aaa0-cc4a01ecda90
+[09/06/2017 17:30:59] :Registry Process Id : 8432
+[09/06/2017 17:30:59] :Registry PortNumber : 5370
+[09/06/2017 17:31:03] :Current Process Name : 
+[09/06/2017 17:31:03] :Process started and activation id is successfully set.
+[09/06/2017 17:31:03] :SecureTCPTunnel is listening on Port=5371
+[09/06/2017 17:31:04] :Starting MSiSCSI Service...
+[09/06/2017 17:31:04] :MSiSCSI Service Started Successfully.
+[09/06/2017 17:31:04] :Setting up initiators Chap Secret...
+[09/06/2017 17:31:04] :Your Initiators Chap Secret is : b0b49805dca146
+[09/06/2017 17:31:04] :Discovering Targets from Portal: pod01-rec2.wus.backup.windowsazure.com, 3260
+[09/06/2017 17:31:05] :Exception Details: Authentication Failure. , 
+[09/06/2017 17:31:05] :Exception caught while connecting to Target. Please retry after some time.

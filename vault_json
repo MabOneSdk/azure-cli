@@ -1,0 +1,16 @@
+{
+  "eTag": null,
+  "id": "/subscriptions/f7424430-103b-4ba3-bd9e-b6f0986f848a/resourceGroups/PsTestRg/providers/Microsoft.RecoveryServices/vaults/SDKTestRsVault",
+  "location": "westus",
+  "name": "SDKTestRsVault",
+  "properties": {
+    "provisioningState": "Succeeded",
+    "upgradeDetails": null
+  },
+  "resourceGroup": "PsTestRg",
+  "sku": {
+    "name": "Standard"
+  },
+  "tags": null,
+  "type": "Microsoft.RecoveryServices/vaults"
+}

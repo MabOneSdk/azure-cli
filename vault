@@ -1,0 +1,16 @@
+{
+  "eTag": null,
+  "id": "/subscriptions/f879818f-5b29-4a43-8961-34169783144f/resourceGroups/nilay-rg/providers/Microsoft.RecoveryServices/vaults/nilayvault",
+  "location": "westus",
+  "name": "nilayvault",
+  "properties": {
+    "provisioningState": "Succeeded",
+    "upgradeDetails": null
+  },
+  "resourceGroup": "nilay-rg",
+  "sku": {
+    "name": "RS0"
+  },
+  "tags": null,
+  "type": "Microsoft.RecoveryServices/vaults"
+}
