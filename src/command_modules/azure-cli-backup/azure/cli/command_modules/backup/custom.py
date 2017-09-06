@@ -23,7 +23,7 @@ from azure.cli.core.util import CLIError
 from azure.cli.command_modules.backup._client_factory import vaults_cf, backup_protected_items_cf, \
     protection_policies_cf, virtual_machines_cf, recovery_points_cf, protection_containers_cf, \
     backup_protectable_items_cf, resources_cf, backup_operation_statuses_cf, job_details_cf, \
-    protection_container_refresh_operation_results_cf
+    protection_container_refresh_operation_results_cf, backup_protection_containers_cf
 
 logger = azlogging.get_az_logger(__name__)
 
