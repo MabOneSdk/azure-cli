@@ -14,8 +14,7 @@ except ImportError:
     from urlparse import urlparse
 from msrest.paging import Paged
 
-from azure.mgmt.recoveryservices.models import Vault, VaultProperties, Sku, SkuName, BackupStorageConfig, \
-    StorageModelType
+from azure.mgmt.recoveryservices.models import Vault, VaultProperties, Sku, SkuName, BackupStorageConfig
 from azure.mgmt.recoveryservicesbackup.models import ProtectedItemResource, AzureIaaSComputeVMProtectedItem, \
     AzureIaaSClassicComputeVMProtectedItem, ProtectionState, IaasVMBackupRequest, BackupRequestResource, \
     IaasVMRestoreRequest, RestoreRequestResource, BackupManagementType, WorkloadType, OperationStatusValues, \
@@ -124,6 +123,9 @@ def enable_protection_for_vm(client, vault, vm, policy):
     rs_vault = _get_vault_from_json(vaults_cf(None), vault)
     resource_group = _get_resource_group_from_id(rs_vault.id)
     policy = _get_policy_from_json(protection_policies_client, policy)
+
+    if vm.location != rs_vault.location:
+        raise CLIError("Vault and VM should be in the same location")
 
     if policy.properties.backup_management_type != BackupManagementType.azure_iaas_vm.value:
         raise CLIError("Pass Policy for Iaas VM")
@@ -314,7 +316,6 @@ def restore_files_mount_rp(client, recovery_point):
     # Get container and item URIs
     container_uri = _get_protection_container_uri_from_id(recovery_point_object.id)
     item_uri = _get_protected_item_uri_from_id(recovery_point_object.id)
-    item_name = item_uri.split(';')[-1]
 
     # file restore request
     item = _get_associated_vm_item(container_uri, item_uri, resource_group, vault_name)
@@ -324,22 +325,25 @@ def restore_files_mount_rp(client, recovery_point):
                                                                    virtual_machine_id=_virtual_machine_id)
     file_restore_request = ILRRequestResource(properties=file_restore_request_properties)
 
-    rp_fresh = recovery_points_cf(None).get(vault_name, resource_group, fabric_name, container_uri, item_uri, _recovery_point_id)
+    rp_fresh = recovery_points_cf(None).get(vault_name, resource_group, fabric_name, container_uri, item_uri,
+                                            _recovery_point_id)
 
     if not rp_fresh.properties.is_instant_ilr_session_active:
-        print('New ILR Connection')
-        result = client.provision(vault_name, resource_group, fabric_name, container_uri, item_uri, _recovery_point_id, file_restore_request, raw=True)
+        logger.info('New ILR Connection')
+        result = client.provision(vault_name, resource_group, fabric_name, container_uri, item_uri, _recovery_point_id,
+                                  file_restore_request, raw=True)
     else:
-        print('Extend ILR Connection')
+        logger.info('Extend ILR Connection')
         rp_fresh.properties.renew_existing_registration = True
-        result = client.provision(vault_name, resource_group, fabric_name, container_uri, item_uri, _recovery_point_id, file_restore_request, raw=True)
+        result = client.provision(vault_name, resource_group, fabric_name, container_uri, item_uri, _recovery_point_id,
+                                  file_restore_request, raw=True)
 
     client_scripts = _track_backup_ilr(result, vault_name, resource_group)
 
     if client_scripts[0].os_type == os_windows:
         _run_client_script_for_windows(client_scripts)
     elif client_scripts[0].os_type == os_linux:
-        _run_client_script_for_linux(client_scripts, item_name, recovery_point_object.properties.recovery_point_time)
+        _run_client_script_for_linux(client_scripts)
 
 
 def restore_files_unmount_rp(client, recovery_point):
@@ -350,14 +354,16 @@ def restore_files_unmount_rp(client, recovery_point):
 
     # Get container and item URIs
     container_uri = _get_protection_container_uri_from_id(recovery_point_object.id)
-    item_uri = _get_protected_item_uri_from_id(recovery_point_object.id)    
-    
+    item_uri = _get_protected_item_uri_from_id(recovery_point_object.id)
+
     _recovery_point_id = recovery_point_object.name
-    rp_fresh = recovery_points_cf(None).get(vault_name, resource_group, fabric_name, container_uri, item_uri, _recovery_point_id)
+    rp_fresh = recovery_points_cf(None).get(vault_name, resource_group, fabric_name, container_uri, item_uri,
+                                            _recovery_point_id)
 
     if rp_fresh.properties.is_instant_ilr_session_active:
-        print('Revoke ILR Connection')
-        result = client.revoke(vault_name, resource_group, fabric_name, container_uri, item_uri, _recovery_point_id, raw=True)
+        logger.info('Revoke ILR Connection')
+        result = client.revoke(vault_name, resource_group, fabric_name, container_uri, item_uri, _recovery_point_id,
+                               raw=True)
         _track_backup_operation(resource_group, result, vault_name)
 
 
@@ -548,13 +554,13 @@ def _get_vm_item_properties_from_vm_id(vm_id):
 def _get_associated_vm_item(container_uri, item_uri, resource_group, vault_name):
     container_name = container_uri.split(';')[-1]
     item_name = item_uri.split(';')[-1]
-    
+
     filter_string = _get_filter_string({
         'backupManagementType': BackupManagementType.azure_iaas_vm.value,
         'itemType': WorkloadType.vm.value})
     items = backup_protected_items_cf(None).list(vault_name, resource_group, filter_string)
     paged_items = _get_list_from_paged_response(items)
-    
+
     filtered_items = [item for item in paged_items
                       if container_name.lower() in item.properties.container_name.lower() and
                       item.properties.friendly_name.lower() == item_name.lower()]
@@ -563,7 +569,6 @@ def _get_associated_vm_item(container_uri, item_uri, resource_group, vault_name)
 
 
 def _run_executable(file_name):
-    import os
     try:
         os.system('{}'.format(file_name))
     except:
@@ -592,17 +597,17 @@ def _get_script_file_name_and_password(script):
 def _run_client_script_for_windows(client_scripts):
     windows_script = client_scripts[1]
     file_name, password = _get_script_file_name_and_password(windows_script)
-    
+
     # Create File
     import urllib.request
     import shutil
     with urllib.request.urlopen(windows_script.url) as response, open(file_name, 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
 
-    logger.info('File downloaded: {}. Use password {}'.format(file_name, password))
+    print('File downloaded: {}. Use password {}'.format(file_name, password))
 
 
-def _run_client_script_for_linux(client_scripts, vm_name, recovery_point_time):
+def _run_client_script_for_linux(client_scripts):
     linux_script = client_scripts[0]
     file_name, password = _get_script_file_name_and_password(linux_script)
 
@@ -610,11 +615,11 @@ def _run_client_script_for_linux(client_scripts, vm_name, recovery_point_time):
     import base64
     script_content = base64.b64decode(linux_script.script_content)
     script_content = script_content.decode('utf-8')
-    
+
     with open(file_name, 'w') as out_file:
         out_file.write(script_content)
 
-    logger.info('File downloaded: {}. Use password {}'.format(file_name, password))
+    print('File downloaded: {}. Use password {}'.format(file_name, password))
 
 # Tracking Utilities
 
@@ -625,11 +630,11 @@ def _track_backup_ilr(result, vault_name, resource_group):
     if operation_status.properties:
         recovery_target = operation_status.properties.recovery_target
         return recovery_target.client_scripts
-            
+
 
 def _track_backup_job(result, vault_name, resource_group):
     job_details_client = job_details_cf(None)
-    
+
     operation_status = _track_backup_operation(resource_group, result, vault_name)
 
     if operation_status.properties:
@@ -640,7 +645,7 @@ def _track_backup_job(result, vault_name, resource_group):
 
 def _track_backup_operation(resource_group, result, vault_name):
     backup_operation_statuses_client = backup_operation_statuses_cf()
-    
+
     operation_id = _get_operation_id_from_header(result.response.headers['Azure-AsyncOperation'])
     operation_status = backup_operation_statuses_client.get(vault_name, resource_group, operation_id)
     while operation_status.status == OperationStatusValues.in_progress.value:
