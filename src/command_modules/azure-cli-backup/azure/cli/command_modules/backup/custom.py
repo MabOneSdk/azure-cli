@@ -241,7 +241,7 @@ def backup_now(client, backup_item, retain_until):
     return _track_backup_job(result, vault_name, resource_group)
 
 
-def show_recovery_point(client, id, backup_item):
+def show_recovery_point(client, id, backup_item):  # pylint: disable=redefined-builtin
     # Client factories
     backup_protected_items_client = backup_protected_items_cf(None)
 
@@ -375,7 +375,7 @@ def restore_files_unmount_rp(client, recovery_point):
         _track_backup_operation(resource_group, result, vault_name)
 
 
-def disable_protection(client, backup_item, delete_backup_data=False, yes=False):
+def disable_protection(client, backup_item, delete_backup_data=False, yes=False):  # pylint: disable=unused-argument
     # Client factories
     backup_protected_items_client = backup_protected_items_cf(None)
 
@@ -527,7 +527,7 @@ def _get_storage_account_id(storage_account_name, storage_account_rg):
         storage_account = resources_client.get(storage_account_rg, classic_storage_resource_namespace,
                                                parent_resource_path, resource_type, storage_account_name,
                                                classic_api_version)
-    except:
+    except:  # pylint: disable=bare-except
         storage_account = resources_client.get(storage_account_rg, storage_resource_namespace, parent_resource_path,
                                                resource_type, storage_account_name, api_version)
     return storage_account.id
@@ -577,7 +577,7 @@ def _get_associated_vm_item(container_uri, item_uri, resource_group, vault_name)
 def _run_executable(file_name):
     try:
         os.system('{}'.format(file_name))
-    except:
+    except:  # pylint: disable=bare-except
         pass
 
 
