@@ -1,0 +1,32 @@
+{
+  "eTag": null,
+  "id": "/Subscriptions/f879818f-5b29-4a43-8961-34169783144f/resourceGroups/nilay-rg/providers/Microsoft.RecoveryServices/vaults/nilayvault/backupFabrics/Azure/protectionContainers/IaasVMContainer;iaasvmcontainerv2;nilay-rg;nilay-test/protectedItems/VM;iaasvmcontainerv2;nilay-rg;nilay-test/recoveryPoints/26548986804635",
+  "location": null,
+  "name": "26548986804635",
+  "properties": {
+    "isInstantIlrSessionActive": false,
+    "isManagedVirtualMachine": false,
+    "isSourceVmEncrypted": false,
+    "keyAndSecret": null,
+    "objectType": "IaasVMRecoveryPoint",
+    "originalStorageAccountOption": false,
+    "recoveryPointAdditionalInfo": "",
+    "recoveryPointTierDetails": [
+      {
+        "status": "Valid",
+        "type": "InstantRP"
+      },
+      {
+        "status": "Valid",
+        "type": "HardenedRP"
+      }
+    ],
+    "recoveryPointTime": "2017-09-06T03:40:11.304658+00:00",
+    "recoveryPointType": "FileSystemConsistent",
+    "sourceVmStorageType": "NormalStorage",
+    "virtualMachineSize": "Standard_A1"
+  },
+  "resourceGroup": "nilay-rg",
+  "tags": null,
+  "type": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems/recoveryPoints"
+}

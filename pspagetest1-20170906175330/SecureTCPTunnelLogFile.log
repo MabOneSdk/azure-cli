@@ -1,0 +1,98 @@
+2017-09-06 17:31:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]ProcessId:9120
+2017-09-06 17:31:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]PortNumber:5371
+2017-09-06 17:31:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:31:04 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4][ConnectRequestCallback] New connection has been accepted
+2017-09-06 17:31:04 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Client connected.
+2017-09-06 17:31:04 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]SSL Connection Succeeded.
+2017-09-06 17:31:04 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Authenticating Server
+2017-09-06 17:31:05 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Authentication Succeeded
+2017-09-06 17:31:05 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4][ReceiveCallback] The initiator has closed the connection
+2017-09-06 17:31:05 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4][ReceiveCallback] Socket is closed. Cleaning up target.
+2017-09-06 17:31:05 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4][ReceiveCallback] Socket is closed. Cleaning up target.
+2017-09-06 17:32:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:32:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:1
+2017-09-06 17:32:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Cleaning up the connection as it is not active or already disconnected from initiator/service.
+2017-09-06 17:32:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Exception raised during GC of connection. Exception=Collection was modified; enumeration operation may not execute.
+2017-09-06 17:32:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:32:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4][ReceiveCallbackFromService] EndReceive ObjectDisposedException
+2017-09-06 17:32:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:33:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:33:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:33:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:33:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:34:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:34:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:34:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:34:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:35:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:35:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:35:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:35:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:36:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:36:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:36:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:36:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:37:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:37:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:37:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:37:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:38:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:38:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:38:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:38:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:39:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:39:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:39:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:39:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:40:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:40:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:40:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:40:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:41:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:41:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:41:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:41:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:42:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:42:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:42:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:42:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:43:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:43:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:43:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:43:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:44:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:44:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:44:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:44:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:45:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:45:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:45:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:45:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:46:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:46:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:46:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:46:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:47:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:47:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:47:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:47:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:48:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:48:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:48:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:48:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:49:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:49:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:49:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:49:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:50:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:50:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:50:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:50:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:51:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:51:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:51:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:51:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed
+2017-09-06 17:52:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Working
+2017-09-06 17:52:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection started
+2017-09-06 17:52:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]Connections:0
+2017-09-06 17:52:03 [MicrosoftWindows10Enterprise;10.0.15063.0;2288626066870276951-ef29c77c-743a-4575-9c5c-2c5f8d0f97f4]GC of active connection completed

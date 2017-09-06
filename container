@@ -1,0 +1,20 @@
+{
+  "eTag": null,
+  "id": "/Subscriptions/f879818f-5b29-4a43-8961-34169783144f/resourceGroups/nilay-rg/providers/Microsoft.RecoveryServices/vaults/nilayvault/backupFabrics/Azure/protectionContainers/IaasVMContainer;iaasvmcontainerv2;nilay-rg;nilay-test",
+  "location": null,
+  "name": "IaasVMContainer;iaasvmcontainerv2;nilay-rg;nilay-test",
+  "properties": {
+    "backupManagementType": "AzureIaasVM",
+    "containerType": "Microsoft.Compute/virtualMachines",
+    "friendlyName": "nilay-test",
+    "healthStatus": "Healthy",
+    "protectableObjectType": "Microsoft.Compute/virtualMachines",
+    "registrationStatus": "Registered",
+    "resourceGroup": "nilay-rg",
+    "virtualMachineId": "/subscriptions/f879818f-5b29-4a43-8961-34169783144f/resourceGroups/nilay-rg/providers/Microsoft.Compute/virtualMachines/nilay-test",
+    "virtualMachineVersion": "Compute"
+  },
+  "resourceGroup": "nilay-rg",
+  "tags": null,
+  "type": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers"
+}

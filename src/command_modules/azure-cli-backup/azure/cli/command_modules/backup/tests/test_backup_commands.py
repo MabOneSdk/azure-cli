@@ -458,21 +458,3 @@ class BackupTests(ScenarioTest):
         canceled_job_status = canceled_job['properties']['status']
 
         assert canceled_job_status == 'Cancelling' or canceled_job_status == 'Cancelled'
-
-    @ResourceGroupPreparer()
-    @VaultPreparer()
-    @VMPreparer()
-    @ItemPreparer()
-    @RPPreparer()
-    def test_ilr_commands(self, resource_group, vault_name, vm_name):
-        vault_json = json.dumps(self.cmd('az backup vault show -n {} -g {}'
-                                         .format(vault_name, resource_group)).get_output_in_json())
-        container_json = json.dumps(self.cmd('az backup container show --container-name \'{}\' --vault \'{}\''
-                                             .format(vm_name, vault_json)).get_output_in_json())
-        item_json = json.dumps(self.cmd('az backup item show --container \'{}\' --item-name {}'
-                                        .format(container_json, vm_name)).get_output_in_json())
-        rp_json = json.dumps(self.cmd('az backup recoverypoint list --backup-item \'{}\' --query [0]'
-                                      .format(item_json)).get_output_in_json())
-
-        self.cmd('az backup restore files mount-rp --recovery-point \'{}\''.format(rp_json))
-        self.cmd('az backup restore files unmount-rp --recovery-point \'{}\''.format(rp_json))
