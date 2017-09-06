@@ -167,7 +167,7 @@ def enable_protection_for_vm(client, vault, vm, policy):
 
 
 def show_item(client, item_name, container, workload_type="VM"):
-    container_object = _get_container_from_json(client, container)
+    container_object = _get_container_from_json(backup_protection_containers_cf(None), container)
 
     filter_string = _get_filter_string({
         'backupManagementType': container_object.properties.backup_management_type,
@@ -178,11 +178,12 @@ def show_item(client, item_name, container, workload_type="VM"):
     return _get_one_or_many([item for item in items if item.properties.friendly_name == item_name])
 
 
-def list_items(client, container):
-    container_object = _get_container_from_json(client, container)
+def list_items(client, container, workload_type="VM"):
+    container_object = _get_container_from_json(backup_protection_containers_cf(None), container)
 
     filter_string = _get_filter_string({
-        'backupManagementType': container_object.properties.backup_management_type})
+        'backupManagementType': container_object.properties.backup_management_type,
+        'itemType': workload_type})
 
     return _get_items(container_object, filter_string)
 
