@@ -106,11 +106,11 @@ def delete_policy(client, policy):
     client.delete(vault_name, resource_group, policy_object.name)
 
 
-def show_container(client, container_name, vault, container_type="AzureVM", status="Registered"):
+def show_container(client, container_name, vault, container_type="AzureIaasVM", status="Registered"):
     return _get_one_or_many(_get_containers(client, container_type, status, vault, container_name))
 
 
-def list_containers(client, vault, container_type="AzureVM", status="Registered"):
+def list_containers(client, vault, container_type="AzureIaasVM", status="Registered"):
     return _get_containers(client, container_type, status, vault)
 
 
@@ -125,10 +125,17 @@ def enable_protection_for_vm(client, vault, vm, policy):
     policy = _get_policy_from_json(protection_policies_client, policy)
 
     if vm.location != rs_vault.location:
-        raise CLIError("Vault and VM should be in the same location")
+        raise CLIError(
+            """
+            The VM should be in the same location as that of the Recovery Services vault to enable protection.
+            """)
 
     if policy.properties.backup_management_type != BackupManagementType.azure_iaas_vm.value:
-        raise CLIError("Pass Policy for Iaas VM")
+        raise CLIError(
+            """
+            The policy type should match with the workload being protected. 
+            Use the relevant get-default policy command and use it to protect the workload.
+            """)
 
     # VM name and resource group name
     vm_name = vm.name
@@ -195,7 +202,11 @@ def update_policy_for_item(client, backup_item, policy):
     policy_object = _get_policy_from_json(protection_policies_client, policy)
 
     if item.properties.backup_management_type != policy_object.properties.backup_management_type:
-        raise CLIError("Item and Policy Backup Management Types should match")
+        raise CLIError(
+            """
+            The policy type should match with the workload being protected. 
+            Use the relevant get-default policy command and use it to update the policy for the workload.
+            """)
 
     # Get container and item URIs
     container_uri = _get_protection_container_uri_from_id(item.id)
@@ -446,10 +457,8 @@ def _get_containers(client, container_type, status, vault, container_name=None):
     rs_vault = _get_vault_from_json(vaults_cf(None), vault)
     resource_group = _get_resource_group_from_id(rs_vault.id)
 
-    backup_management_type = _get_backup_management_type(container_type)
-
     filter_dict = {
-        'backupManagementType': backup_management_type,
+        'backupManagementType': container_type,
         'status': status
     }
     if container_name:
@@ -714,10 +723,6 @@ def _get_query_dates(end_date, start_date):
 def _get_item_type(workload_type):
     return WorkloadType.vm.value if workload_type == "AzureVM" else None
 
-
-def _get_backup_management_type(container_type):
-    return BackupManagementType.azure_iaas_vm.value if container_type == "AzureVM" else None
-
 # JSON Utilities
 
 
@@ -757,7 +762,13 @@ def _get_or_read_json(json_or_file):
         with open(json_or_file) as f:
             json_obj = json.load(f)
     if json_obj is None:
-        raise ValueError("JSON parse failure: please provide either the json file path or json content itself")
+        raise ValueError(
+            """
+            The variable passed should be in JSON format supplied by az backup CLI commands.
+            Make sure that you use relevant az backup show commandlets output and the output is json
+            (use -o json for explicit JSON output) while assigning value to this variable.
+            Take care to edit only the values and not the keys within the JSON file.
+            """)
     return json_obj
 
 
@@ -768,7 +779,13 @@ def _get_object_from_json(client, json_or_file, class_name):
     # Deserialize json to object
     param = client._deserialize(class_name, json_obj)  # pylint: disable=protected-access
     if param is None:
-        raise ValueError("JSON file for object '{}' is not in correct format.".format(json_or_file))
+        raise ValueError(
+            """
+            The variable passed should be in JSON format supplied by az backup CLI commands.
+            Make sure that you use relevant az backup show commandlets output and the output is json
+            (use -o json for explicit JSON output) while assigning value to this variable.
+            Take care to edit only the values and not the keys within the JSON file.
+            """)
 
     return param
 

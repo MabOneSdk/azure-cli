@@ -15,8 +15,10 @@ from azure.cli.command_modules.backup._client_factory import vaults_cf, backup_p
 
 
 def transform_container(result):
-    return OrderedDict([('name', result['properties']['friendlyName']),
-                        ('resourceGroup', result['resourceGroup'])])
+    return OrderedDict([('Name', result['properties']['friendlyName']),
+                        ('Resource Group', result['resourceGroup']),
+                        ('Type', result['properties']['backupManagementType']),
+                        ('Registration Status', result['properties']['registrationStatus'])])
 
 
 def transform_container_list(container_list):

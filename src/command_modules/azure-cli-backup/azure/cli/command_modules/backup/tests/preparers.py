@@ -107,7 +107,7 @@ class ItemPreparer(AbstractPreparer, SingleValueReplacer):
                  vault_parameter_name='vault_name',
                  resource_group_parameter_name='resource_group',
                  dev_setting_name='AZURE_CLI_TEST_DEV_BACKUP_ITEM_NAME'):
-        super().__init__(name_prefix, 24)
+        super(ItemPreparer, self).__init__(name_prefix, 24)
         self.parameter_name = parameter_name
         self.vm_parameter_name = vm_parameter_name
         self.resource_group = None
@@ -170,7 +170,7 @@ class PolicyPreparer(AbstractPreparer, SingleValueReplacer):
     def __init__(self, name_prefix='clitest-item', parameter_name='policy_name', vault_parameter_name='vault_name',
                  resource_group_parameter_name='resource_group',
                  dev_setting_name='AZURE_CLI_TEST_DEV_BACKUP_POLICY_NAME'):
-        super().__init__(name_prefix, 24)
+        super(PolicyPreparer, self).__init__(name_prefix, 24)
         self.parameter_name = parameter_name
         self.resource_group = None
         self.resource_group_parameter_name = resource_group_parameter_name
@@ -222,7 +222,7 @@ class RPPreparer(AbstractPreparer, SingleValueReplacer):
     def __init__(self, name_prefix='clitest-rp', parameter_name='rp_name', vm_parameter_name='vm_name',
                  vault_parameter_name='vault_name',
                  resource_group_parameter_name='resource_group', dev_setting_name='AZURE_CLI_TEST_DEV_BACKUP_RP_NAME'):
-        super().__init__(name_prefix, 24)
+        super(RPPreparer, self).__init__(name_prefix, 24)
         self.parameter_name = parameter_name
         self.vm_parameter_name = vm_parameter_name
         self.resource_group = None

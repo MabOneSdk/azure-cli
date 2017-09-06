@@ -17,7 +17,7 @@ from azure.cli.command_modules.backup._validators import \
 
 vault_name_type = CliArgumentType(help='The name of the Recovery Services vault.', options_list=('--vault-name',), completer=get_resource_name_completion_list('Microsoft.RecoveryServices/vaults'), id_part=None)
 
-allowed_container_types = ['AzureVM']
+allowed_container_types = ['AzureIaasVM']
 allowed_workload_types = ['AzureVM']
 
 # Vault
