@@ -30,6 +30,8 @@ logger = azlogging.get_az_logger(__name__)
 
 fabric_name = "Azure"
 default_policy_name = "DefaultPolicy"
+os_windows = 'Windows'
+os_linux = 'Linux'
 
 
 def create_vault(client, vault_name, region, resource_group_name):
@@ -307,7 +309,8 @@ def restore_files_mount_rp(client, recovery_point):
     # Get container and item URIs
     container_uri = _get_protection_container_uri_from_id(recovery_point_object.id)
     item_uri = _get_protected_item_uri_from_id(recovery_point_object.id)
-    
+    item_name = item_uri.split(';')[-1]
+
     # file restore request
     item = _get_associated_vm_item(container_uri, item_uri, resource_group, vault_name)
     _recovery_point_id = recovery_point_object.name
@@ -328,10 +331,10 @@ def restore_files_mount_rp(client, recovery_point):
 
     client_scripts = _track_backup_ilr(result, vault_name, resource_group)
 
-    if client_scripts[0].os_type == 'Windows':
+    if client_scripts[0].os_type == os_windows:
         _run_client_script_for_windows(client_scripts)
-    elif client_scripts[0].os_type == 'Linux':
-        _run_client_script_for_linux(client_scripts)
+    elif client_scripts[0].os_type == os_linux:
+        _run_client_script_for_linux(client_scripts, item_name, recovery_point_object.properties.recovery_point_time)
 
 
 def restore_files_unmount_rp(client, recovery_point):
@@ -554,6 +557,19 @@ def _get_associated_vm_item(container_uri, item_uri, resource_group, vault_name)
     return item
 
 
+def _run_executable(file_name):
+    import os
+    try:
+        os.system('{}'.format(file_name))
+    except:
+        pass
+
+
+def _get_host_os():
+    import platform
+    return platform.system()
+
+
 def _run_client_script_for_windows(client_scripts):
     windows_script = client_scripts[1]
     file_name = windows_script.script_name_suffix + windows_script.script_extension
@@ -564,27 +580,27 @@ def _run_client_script_for_windows(client_scripts):
     with urllib.request.urlopen(windows_script.url) as response, open(file_name, 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
     
-    # Execute File
-    import os
-    os.system('{}'.format(file_name))
+    if _get_host_os() == os_windows:
+        # Execute File
+        _run_executable(file_name)
 
 
-def _run_client_script_for_linux(client_scripts):
+def _run_client_script_for_linux(client_scripts, vm_name, recovery_point_time):
     linux_script = client_scripts[0]
     
     # Create File
     import base64
     script_content = base64.b64decode(linux_script.script_content)
-    file_name = '{}_{}_{}{}'.format(linux_script.os_type,
-                                  vm_name,
-                                  recovery_point_time,
-                                  linux_script.script_extension)
+    script_content = script_content.decode('utf-8')
+    file_name = '{}_{}{}'.format(linux_script.os_type,
+                                    vm_name,
+                                    linux_script.script_extension)
     with open(file_name, 'w') as out_file:
         out_file.write(script_content)
 
-    # Execute File
-    import subprocess
-    subprocess.call('{}'.format(file_name))
+    if _get_host_os() == os_linux:
+        # Execute File
+        _run_executable(file_name)
 
 
 # Tracking Utilities
