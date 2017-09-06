@@ -42,9 +42,9 @@ register_cli_argument('backup container show', 'container_name', help='The name 
 # Item
 for command in ['list', 'show']:
     register_cli_argument('backup item {}'.format(command), 'container', type=file_type, help='JSON encoded container definition. Use the show command of the container to obtain a container object.', completer=FilesCompleter())
+    register_cli_argument('backup item {}'.format(command), 'workload_type', help='The type of the backed up item.', **enum_choice_list(allowed_workload_types))
 
 register_cli_argument('backup item show', 'item_name', help='The name of the backed up item.')
-register_cli_argument('backup item show', 'workload_type', help='The type of the backed up item.', **enum_choice_list(allowed_workload_types))
 
 register_cli_argument('backup item update-policy', 'policy', type=file_type, help='The new policy/existing policy updated with the values to be associated with this item. JSON encoded policy definition. Use the show command to obtain a policy object.', completer=FilesCompleter())
 register_cli_argument('backup item update-policy', 'backup_item', type=file_type, help='JSON encoded backupItem definition. Use the show command of the backup item to obtain the relevant backupItem object.', completer=FilesCompleter())
