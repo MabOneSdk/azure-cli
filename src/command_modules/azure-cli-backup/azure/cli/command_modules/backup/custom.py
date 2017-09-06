@@ -130,7 +130,7 @@ def enable_protection_for_vm(client, vault, vm, policy):
     if policy.properties.backup_management_type != BackupManagementType.azure_iaas_vm.value:
         raise CLIError(
             """
-            The policy type should match with the workload being protected. 
+            The policy type should match with the workload being protected.
             Use the relevant get-default policy command and use it to protect the workload.
             """)
 
@@ -201,7 +201,7 @@ def update_policy_for_item(client, backup_item, policy):
     if item.properties.backup_management_type != policy_object.properties.backup_management_type:
         raise CLIError(
             """
-            The policy type should match with the workload being protected. 
+            The policy type should match with the workload being protected.
             Use the relevant get-default policy command and use it to update the policy for the workload.
             """)
 
@@ -605,9 +605,9 @@ def _run_client_script_for_windows(client_scripts):
     file_name, password = _get_script_file_name_and_password(windows_script)
 
     # Create File
-    import urllib.request
+    from six.moves.urllib.request import urlopen  # pylint: disable=import-error
     import shutil
-    with urllib.request.urlopen(windows_script.url) as response, open(file_name, 'wb') as out_file:
+    with urlopen(windows_script.url) as response, open(file_name, 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
 
     print('File downloaded: {}. Use password {}'.format(file_name, password))
