@@ -30,12 +30,45 @@ def transform_item(result):
                         ('Protection Status', result['properties']['protectionStatus'])])
 
 
+def transform_job(result):
+    return OrderedDict([('ID', result['name']),
+                        ('Operation', result['properties']['operation']),
+                        ('Status', result['properties']['status']),
+                        ('Item Name', result['properties']['entityFriendlyName']),
+                        ('Start Time UTC', result['properties']['startTime']),
+                        ('Duration', result['properties']['duration'])])
+
+
+def transform_policy(result):
+    return OrderedDict([('Name', result['name']),
+                        ('Resource Group', result['resourceGroup']),
+                        ('Type', result['properties']['backupManagementType'])])
+
+
+def transform_recovery_point(result):
+    return OrderedDict([('ID', result['name']),
+                        ('Time', result['properties']['recoveryPointTime']),
+                        ('Consistency', result['properties']['recoveryPointType'])])
+
+
 def transform_container_list(container_list):
     return [transform_container(c) for c in container_list]
 
 
 def transform_item_list(item_list):
     return [transform_item(i) for i in item_list]
+
+
+def transform_job_list(job_list):
+    return [transform_job(j) for j in job_list]
+
+
+def transform_policy_list(policy_list):
+    return [transform_policy(p) for p in policy_list]
+
+
+def transform_recovery_point_list(recovery_point_list):
+    return [transform_recovery_point(rp) for rp in recovery_point_list]
 
 
 cli_command(__name__, 'backup vault create', 'azure.cli.command_modules.backup.custom#create_vault', vaults_cf)
@@ -50,8 +83,8 @@ cli_command(__name__, 'backup container list', 'azure.cli.command_modules.backup
 
 cli_command(__name__, 'backup policy get-default-for-vm', 'azure.cli.command_modules.backup.custom#get_default_policy_for_vm', protection_policies_cf)
 cli_command(__name__, 'backup policy show', 'azure.cli.command_modules.backup.custom#show_policy', protection_policies_cf)
-cli_command(__name__, 'backup policy list', 'azure.cli.command_modules.backup.custom#list_policies', backup_policies_cf)
-cli_command(__name__, 'backup policy list-associated-items', 'azure.cli.command_modules.backup.custom#list_associated_items_for_policy', protection_policies_cf)
+cli_command(__name__, 'backup policy list', 'azure.cli.command_modules.backup.custom#list_policies', backup_policies_cf, table_transformer=transform_policy_list)
+cli_command(__name__, 'backup policy list-associated-items', 'azure.cli.command_modules.backup.custom#list_associated_items_for_policy', protection_policies_cf, table_transformer=transform_item_list)
 cli_command(__name__, 'backup policy update', 'azure.cli.command_modules.backup.custom#update_policy', protection_policies_cf)
 cli_command(__name__, 'backup policy delete', 'azure.cli.command_modules.backup.custom#delete_policy', protection_policies_cf)
 
@@ -63,13 +96,13 @@ cli_command(__name__, 'backup item show', 'azure.cli.command_modules.backup.cust
 cli_command(__name__, 'backup item list', 'azure.cli.command_modules.backup.custom#list_items', backup_protection_containers_cf, table_transformer=transform_item_list)
 cli_command(__name__, 'backup item update-policy', 'azure.cli.command_modules.backup.custom#update_policy_for_item', protected_items_cf)
 
-cli_command(__name__, 'backup job list', 'azure.cli.command_modules.backup.custom#list_jobs', backup_jobs_cf)
+cli_command(__name__, 'backup job list', 'azure.cli.command_modules.backup.custom#list_jobs', backup_jobs_cf, table_transformer=transform_job_list)
 cli_command(__name__, 'backup job show', 'azure.cli.command_modules.backup.custom#show_job', job_details_cf)
 cli_command(__name__, 'backup job stop', 'azure.cli.command_modules.backup.custom#stop_job', job_cancellations_cf)
 cli_command(__name__, 'backup job wait', 'azure.cli.command_modules.backup.custom#wait_for_job', job_details_cf)
 
 cli_command(__name__, 'backup recoverypoint show', 'azure.cli.command_modules.backup.custom#show_recovery_point', recovery_points_cf)
-cli_command(__name__, 'backup recoverypoint list', 'azure.cli.command_modules.backup.custom#list_recovery_points', recovery_points_cf)
+cli_command(__name__, 'backup recoverypoint list', 'azure.cli.command_modules.backup.custom#list_recovery_points', recovery_points_cf, table_transformer=transform_recovery_point_list)
 
 cli_command(__name__, 'backup restore disks', 'azure.cli.command_modules.backup.custom#restore_disks', restores_cf)
 cli_command(__name__, 'backup restore files mount-rp', 'azure.cli.command_modules.backup.custom#restore_files_mount_rp', item_level_recovery_connections_cf)
