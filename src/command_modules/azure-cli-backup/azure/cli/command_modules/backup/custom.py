@@ -725,10 +725,13 @@ def _get_filter_string(filter_dict):
             filter_segment = "{} eq '{}'".format(k, v.strftime('%Y-%m-%d %I:%M:%S %p'))  # yyyy-MM-dd hh:mm:ss tt
         if filter_segment is not None:
             filter_list.append(filter_segment)
-    return " and ".join(filter_list)
+    filter_string = " and ".join(filter_list)
+    return None if not filter_string else filter_string
 
 
 def _get_query_dates(end_date, start_date):
+    query_start_date = None
+    query_end_date = None
     if start_date and end_date:
         query_start_date = start_date
         query_end_date = end_date
@@ -738,9 +741,6 @@ def _get_query_dates(end_date, start_date):
     elif start_date and not end_date:
         query_start_date = start_date
         query_end_date = query_start_date + timedelta(days=30)
-    else:
-        query_end_date = datetime.utcnow()
-        query_start_date = query_end_date - timedelta(days=30)
     return query_end_date, query_start_date
 
 # JSON Utilities

@@ -375,7 +375,6 @@ interactions:
       pragma: [no-cache]
       server: [Microsoft-IIS/8.0]
       strict-transport-security: [max-age=31536000; includeSubDomains]
-      transfer-encoding: [chunked]
       vary: [Accept-Encoding]
       x-powered-by: [ASP.NET]
     status: {code: 200, message: OK}
@@ -429,7 +428,6 @@ interactions:
       pragma: [no-cache]
       server: [Microsoft-IIS/8.0]
       strict-transport-security: [max-age=31536000; includeSubDomains]
-      transfer-encoding: [chunked]
       vary: [Accept-Encoding]
       x-powered-by: [ASP.NET]
     status: {code: 200, message: OK}
@@ -711,7 +709,7 @@ interactions:
           AZURECLI/2.0.11+dev]
       accept-language: [en-US]
     method: GET
-    uri: https://management.azure.com/Subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/clitest.rg000001/providers/Microsoft.RecoveryServices/vaults/clitest-vault000003/backupProtectionContainers?$filter=status%20eq%20%27Registered%27%20and%20backupManagementType%20eq%20%27AzureIaasVM%27&api-version=2016-12-01
+    uri: https://management.azure.com/Subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/clitest.rg000001/providers/Microsoft.RecoveryServices/vaults/clitest-vault000003/backupProtectionContainers?api-version=2016-12-01&$filter=backupManagementType%20eq%20%27AzureIaasVM%27%20and%20status%20eq%20%27Registered%27
   response:
     body: {string: '{"value":[]}'}
     headers:
@@ -791,7 +789,7 @@ interactions:
           AZURECLI/2.0.11+dev]
       accept-language: [en-US]
     method: GET
-    uri: https://management.azure.com/Subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/clitest.rg000001/providers/Microsoft.RecoveryServices/vaults/clitest-vault000002/backupProtectionContainers?$filter=status%20eq%20%27Registered%27%20and%20backupManagementType%20eq%20%27AzureIaasVM%27&api-version=2016-12-01
+    uri: https://management.azure.com/Subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/clitest.rg000001/providers/Microsoft.RecoveryServices/vaults/clitest-vault000002/backupProtectionContainers?api-version=2016-12-01&$filter=backupManagementType%20eq%20%27AzureIaasVM%27%20and%20status%20eq%20%27Registered%27
   response:
     body: {string: '{"value":[]}'}
     headers:
