@@ -620,10 +620,9 @@ def _run_client_script_for_linux(client_scripts):
 
     # Create File
     import base64
-    script_content = base64.b64decode(linux_script.script_content)
-    script_content = script_content.decode('utf-8')
-
-    with open(file_name, 'w') as out_file:
+    script_content = base64.b64decode(linux_script.script_content).decode('utf-8')
+    
+    with open(file_name, 'w', newline='\n') as out_file:
         out_file.write(script_content)
 
     logger.warning('File downloaded: {}. Use password {}'.format(file_name, password))
