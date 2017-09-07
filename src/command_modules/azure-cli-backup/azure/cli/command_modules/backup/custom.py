@@ -690,7 +690,7 @@ def _get_one_or_many(obj_list):
 
 def _get_filter_string(filter_dict):
     filter_list = []
-    for k, v in filter_dict.items():
+    for k, v in sorted(filter_dict.items()):
         filter_segment = None
         if isinstance(v, str):
             filter_segment = "{} eq '{}'".format(k, v)
