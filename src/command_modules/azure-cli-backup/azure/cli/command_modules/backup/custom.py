@@ -81,7 +81,7 @@ def list_associated_items_for_policy(client, policy):
     resource_group = _get_resource_group_from_id(policy_object.id)
 
     filter_string = _get_filter_string({
-        'policyName': policy_object.name})
+        'policyName': str(policy_object.name)})
 
     items = backup_protected_items_client.list(vault_name, resource_group, filter_string)
     return _get_list_from_paged_response(items)
@@ -170,7 +170,7 @@ def show_item(client, item_name, container, workload_type="VM"):
     container_object = _get_container_from_json(client, container)
 
     filter_string = _get_filter_string({
-        'backupManagementType': container_object.properties.backup_management_type,
+        'backupManagementType': str(container_object.properties.backup_management_type),
         'itemType': workload_type})
 
     items = _get_items(container_object, filter_string)
@@ -182,7 +182,7 @@ def list_items(client, container, workload_type="VM"):
     container_object = _get_container_from_json(client, container)
 
     filter_string = _get_filter_string({
-        'backupManagementType': container_object.properties.backup_management_type,
+        'backupManagementType': str(container_object.properties.backup_management_type),
         'itemType': workload_type})
 
     return _get_items(container_object, filter_string)
