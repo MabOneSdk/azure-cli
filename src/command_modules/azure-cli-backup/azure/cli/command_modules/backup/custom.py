@@ -624,8 +624,12 @@ def _run_client_script_for_linux(client_scripts):
     script_content = script_content.replace('TargetPassword="{}"'.format(password),
                                             'TargetPassword="UserInput012345"')  # This is a hack due to bug in script
     
-    with open(file_name, 'w', newline='\n') as out_file:
-        out_file.write(script_content)
+    if _get_host_os() == os_windows:
+        with open(file_name, 'w', newline='\n') as out_file:
+            out_file.write(script_content)
+    elif _get_host_os() == os_linux:
+        with open(file_name, 'wb') as out_file:
+            out_file.write(script_content)
 
     logger.warning('File downloaded: {}. Use password {}'.format(file_name, password))
 
