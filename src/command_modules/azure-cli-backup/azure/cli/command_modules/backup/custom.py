@@ -46,7 +46,7 @@ def list_vaults(client, resource_group_name=None):
     if resource_group_name:
         return client.list_by_resource_group(resource_group_name, custom_headers=_get_custom_headers())
     else:
-        client.list_by_subscription_id(custom_headers=_get_custom_headers())
+        return client.list_by_subscription_id(custom_headers=_get_custom_headers())
 
 
 def set_backup_properties(client, vault_name, resource_group_name, backup_storage_redundancy):
@@ -636,7 +636,7 @@ def _run_client_script_for_linux(client_scripts):
     script_content = base64.b64decode(linux_script.script_content).decode('utf-8')
     script_content = script_content.replace('TargetPassword="{}"'.format(password),
                                             'TargetPassword="UserInput012345"')  # This is a hack due to bug in script
-    
+
     if _get_host_os() == os_windows:
         with open(file_name, 'w', newline='\n') as out_file:
             out_file.write(script_content)
@@ -650,7 +650,7 @@ def _run_client_script_for_linux(client_scripts):
 def _get_custom_headers():
     import uuid
 
-    return { 'x-ms-client-request-id': str(uuid.uuid1()) + '-Cli' }
+    return {'x-ms-client-request-id': str(uuid.uuid1()) + '-Cli'}
 
 # Tracking Utilities
 
