@@ -45,8 +45,7 @@ def create_vault(client, vault_name, region, resource_group_name):
 def list_vaults(client, resource_group_name=None):
     if resource_group_name:
         return client.list_by_resource_group(resource_group_name, custom_headers=_get_custom_headers())
-    else:
-        return client.list_by_subscription_id(custom_headers=_get_custom_headers())
+    return client.list_by_subscription_id(custom_headers=_get_custom_headers())
 
 
 def set_backup_properties(client, vault_name, resource_group_name, backup_storage_redundancy):
