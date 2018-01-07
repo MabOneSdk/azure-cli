@@ -146,16 +146,19 @@ def show_item(client, resource_group_name, vault_name, container_name, name, con
     return _get_one_or_many([item for item in items if item.properties.friendly_name == name])
 
 
-def list_items(client, resource_group_name, vault_name, container_name, container_type="AzureIaasVM", item_type="VM"):
+def list_items(client, resource_group_name, vault_name, container_name=None, container_type="AzureIaasVM", item_type="VM"):
     filter_string = _get_filter_string({
         'backupManagementType': container_type,
         'itemType': item_type})
 
     items = client.list(vault_name, resource_group_name, filter_string)
     paged_items = _get_list_from_paged_response(items)
-    container = show_container(backup_protection_containers_cf(None), container_name, resource_group_name, vault_name,
-                               container_type)
-    return [item for item in paged_items if item.properties.container_name.lower() in container.name.lower()]
+    if container_name is not None:
+        container = show_container(backup_protection_containers_cf(None), container_name, resource_group_name, vault_name,
+                                   container_type)
+        return [item for item in paged_items if item.properties.container_name.lower() in container.name.lower()]
+    else:
+        return paged_items
 
 
 def update_policy_for_item(client, resource_group_name, vault_name, container_name, item_name, policy_name,

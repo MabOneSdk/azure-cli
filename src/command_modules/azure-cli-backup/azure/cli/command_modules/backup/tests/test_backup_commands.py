@@ -235,6 +235,12 @@ class BackupTests(ScenarioTest, unittest.TestCase):
                      JMESPathCheck("length(@)", 1),
                      JMESPathCheck("length([?properties.friendlyName == '{}'])".format(vm2), 1)])
 
+        self.cmd('backup item list -g {} -v {}'
+                 .format(resource_group, vault_name), checks=[
+                     JMESPathCheck("length(@)", 2),
+                     JMESPathCheck("length([?properties.friendlyName == '{}'])".format(vm1), 1),
+                     JMESPathCheck("length([?properties.friendlyName == '{}'])".format(vm2), 1)])
+
         self.cmd('backup item set-policy -g {} -v {} -c {} -n {} -p {}'
                  .format(resource_group, vault_name, container1, vm1, policy_name), checks=[
                      JMESPathCheck("properties.entityFriendlyName", vm1),
