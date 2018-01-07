@@ -99,7 +99,7 @@ def enable_protection_for_vm(client, resource_group_name, vault_name, vm, policy
     vault = vaults_cf(None).get(resource_group_name, vault_name)
     policy = show_policy(protection_policies_cf(None), resource_group_name, vault_name, policy_name)
 
-    if vm.location != vault.location:
+    if vm.location.lower() != vault.location.lower():
         raise CLIError(
             """
             The VM should be in the same location as that of the Recovery Services vault to enable protection.
