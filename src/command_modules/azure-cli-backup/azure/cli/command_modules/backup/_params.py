@@ -89,6 +89,7 @@ for command in ['restore-disks', 'files']:
     register_cli_argument('backup restore {}'.format(command), 'rp_name', rp_name_type)
 
 register_cli_argument('backup restore restore-disks', 'storage_account', help='Name or ID of the storge account to which disks are restored.')
+register_cli_argument('backup restore restore-disks', 'restore_disks_to_this_storage_account', help='Restore disks to this storage account.')
 
 # Job
 register_cli_argument('backup job', 'vault_name', vault_name_type)

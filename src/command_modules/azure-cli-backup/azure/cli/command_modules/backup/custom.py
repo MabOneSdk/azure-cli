@@ -244,15 +244,31 @@ def list_recovery_points(client, resource_group_name, vault_name, container_name
     return paged_recovery_points
 
 
-def restore_disks(client, resource_group_name, vault_name, container_name, item_name, rp_name, storage_account):
+def restore_disks(client, resource_group_name, vault_name, container_name, item_name, rp_name, storage_account,
+                  restore_disks_to_this_storage_account=False):
     item = show_item(backup_protected_items_cf(None), resource_group_name, vault_name, container_name, item_name,
                      "AzureIaasVM", "VM")
+    recovery_point = show_recovery_point(recovery_points_cf(None), resource_group_name, vault_name, container_name,
+                                         item_name, rp_name, "AzureIaasVM", "VM")
     vault = vaults_cf(None).get(resource_group_name, vault_name)
     vault_location = vault.location
 
     # Get container and item URIs
     container_uri = _get_protection_container_uri_from_id(item.id)
     item_uri = _get_protected_item_uri_from_id(item.id)
+
+    # Original Storage Account Restore Logic
+    if restore_disks_to_this_storage_account:
+        use_original_storage_account = False
+    else:
+        # Intent: use_original_storage_account = True
+        if recovery_point.original_storage_account_option:
+            use_original_storage_account = True
+        else:
+            raise ValueError(
+                """
+                Error Message
+                """)
 
     # Construct trigger restore request object
     sa_name, sa_rg = _get_resource_name_and_rg(resource_group_name, storage_account)
@@ -263,7 +279,8 @@ def restore_disks(client, resource_group_name, vault_name, container_name, item_
                                                       recovery_type='RestoreDisks',
                                                       region=vault_location,
                                                       storage_account_id=_storage_account_id,
-                                                      source_resource_id=_source_resource_id)
+                                                      source_resource_id=_source_resource_id,
+                                                      original_storage_account_option=use_original_storage_account)
     trigger_restore_request = RestoreRequestResource(properties=trigger_restore_properties)
 
     # Trigger restore
