@@ -113,6 +113,18 @@ def list_associated_items_for_policy(client, resource_group_name, vault_name, na
 
 def set_policy(client, resource_group_name, vault_name, policy):
     policy_object = _get_policy_from_json(client, policy)
+    retention_range_in_days=policy_object.properties.instant_rp_retention_range_in_days
+    schedule_run_frequency=policy_object.properties.schedule_policy.schedule_run_frequency
+    if retention_range_in_days !=5 and schedule_run_frequency=='Weekly':
+        raise CLIError(
+            """
+            Retention policy range must be equal to 5.
+            """)
+    if (retention_range_in_days>5 or retention_range_in_days<1) and schedule_run_frequency=='Daily':
+        raise CLIError(
+            """
+            Retention policy range must be between 1 to 5. 
+            """)
 
     return client.create_or_update(vault_name, resource_group_name, policy_object.name, policy_object)
 

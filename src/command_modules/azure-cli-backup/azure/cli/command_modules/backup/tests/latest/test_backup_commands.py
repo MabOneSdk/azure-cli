@@ -207,18 +207,26 @@ class BackupTests(ScenarioTest, unittest.TestCase):
             self.check("length([?name == '{policy2}'])", 1)
         ])
 
-        self.cmd('backup policy list-associated-items -g {rg} -v {vault} -n {default}', checks=[
-            self.check("length(@)", 2),
-            self.check("length([?properties.friendlyName == '{}'])".format(vm1), 1),
-            self.check("length([?properties.friendlyName == '{}'])".format(vm2), 1)
-        ])
-
+        self.kwargs['instantRpRetentionRangeInDays'] = 2
         self.kwargs['policy1_json']['name'] = self.kwargs['policy3']
+        self.kwargs['policy1_json']['properties']['instantRpRetentionRangeInDays']= 2
         self.kwargs['policy1_json'] = json.dumps(self.kwargs['policy1_json'])
 
         self.cmd("backup policy set -g {rg} -v {vault} --policy '{policy1_json}'", checks=[
             self.check('name', '{policy3}'),
             self.check('resourceGroup', '{rg}')
+        ])
+
+        self.kwargs['policy1_json'] = self.cmd('backup policy show -g {rg} -v {vault} -n {policy1}', checks=[
+            self.check('name', '{policy1}'),
+            self.check('resourceGroup', '{rg}'),
+            self.check('properties.instantRpRetentionRangeInDays','{instantRpRetentionRangeInDays}')
+        ]).get_output_in_json()
+
+        self.cmd('backup policy list-associated-items -g {rg} -v {vault} -n {default}', checks=[
+            self.check("length(@)", 2),
+            self.check("length([?properties.friendlyName == '{}'])".format(vm1), 1),
+            self.check("length([?properties.friendlyName == '{}'])".format(vm2), 1)
         ])
 
         self.cmd('backup policy list -g {rg} -v {vault}', checks=[

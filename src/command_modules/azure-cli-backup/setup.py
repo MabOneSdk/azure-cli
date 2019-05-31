@@ -31,8 +31,8 @@ CLASSIFIERS = [
 ]
 
 DEPENDENCIES = [
-    'azure-mgmt-recoveryservices==0.3.0',
-    'azure-mgmt-recoveryservicesbackup==0.3.0',
+    'azure-mgmt-recoveryservices==0.4.0',
+    'azure-mgmt-recoveryservicesbackup==0.4.0',
     'azure-cli-core'
 ]
 
