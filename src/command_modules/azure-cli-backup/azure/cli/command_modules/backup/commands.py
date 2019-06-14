@@ -7,10 +7,13 @@ from azure.cli.core.commands import CliCommandType
 from azure.cli.command_modules.backup._client_factory import vaults_cf, backup_protection_containers_cf, \
     protection_policies_cf, backup_policies_cf, protected_items_cf, backups_cf, backup_jobs_cf, \
     job_details_cf, job_cancellations_cf, recovery_points_cf, restores_cf, backup_storage_configs_cf, \
-    item_level_recovery_connections_cf, backup_protected_items_cf  # pylint: disable=unused-variable
+    item_level_recovery_connections_cf, backup_protected_items_cf, backup_protectable_items_cf, \
+    protectable_items_cf  # pylint: disable=unused-variable
 from azure.cli.command_modules.backup._format import (
     transform_container_list, transform_policy_list, transform_item_list, transform_job_list,
-    transform_recovery_point_list)
+    transform_recovery_point_list, transform_protectable_item_list, transform_wl_container_list,
+    transform_wl_item_list, transform_wl_recovery_point_list, transform_wl_policy_list,
+    transform_wl_policy_show)
 
 
 # pylint: disable=line-too-long
@@ -38,6 +41,11 @@ def load_command_table(self, _):
         g.show_command('show', 'show_container')
         g.command('list', 'list_containers', table_transformer=transform_container_list)
 
+    with self.command_group('backup azure-wl container', backup_custom, client_factory=backup_protection_containers_cf) as g:
+        g.show_command('show', 'show_wl_container')
+        g.command('list', 'list_wl_containers', table_transformer=transform_wl_container_list)
+        g.command('register', 'wl_register_container')
+
     with self.command_group('backup policy', backup_custom, client_factory=protection_policies_cf) as g:
         g.command('get-default-for-vm', 'get_default_policy_for_vm')
         g.show_command('show', 'show_policy')
@@ -45,6 +53,10 @@ def load_command_table(self, _):
         g.command('list-associated-items', 'list_associated_items_for_policy', client_factory=backup_protected_items_cf, table_transformer=transform_item_list)
         g.command('set', 'set_policy')
         g.command('delete', 'delete_policy')
+
+    with self.command_group('backup azure-wl policy', backup_custom, client_factory=protection_policies_cf) as g:
+        g.show_command('show', 'show_policy', table_transformer=transform_wl_policy_show)
+        g.command('list', 'list_wl_policies', client_factory=backup_policies_cf, table_transformer=transform_wl_policy_list)
 
     with self.command_group('backup protection', backup_custom, client_factory=protected_items_cf) as g:
         g.command('check-vm', 'check_protection_enabled_for_vm')
@@ -57,6 +69,16 @@ def load_command_table(self, _):
         g.command('list', 'list_items', table_transformer=transform_item_list)
         g.command('set-policy', 'update_policy_for_item', client_factory=protected_items_cf)
 
+    with self.command_group('backup azure-wl item', backup_custom, client_factory=backup_protected_items_cf) as g:
+        g.show_command('show', 'show_wl_item')
+        g.command('list', 'list_wl_items', table_transformer=transform_wl_item_list)
+        g.command('set-policy', 'update_policy_for_item', client_factory=protected_items_cf)
+
+    with self.command_group('backup azure-wl protectable-item', backup_custom, client_factory=backup_protectable_items_cf) as g:
+        g.show_command('show', 'show_protectable_item')
+        g.command('list', 'list_protectable_items', table_transformer=transform_protectable_item_list)
+        g.command('initialize', 'initialize_protectable_items', client_factory=protectable_items_cf)
+
     with self.command_group('backup job', backup_custom, client_factory=job_details_cf) as g:
         g.command('list', 'list_jobs', client_factory=backup_jobs_cf, table_transformer=transform_job_list)
         g.show_command('show', 'show_job')
@@ -66,6 +88,10 @@ def load_command_table(self, _):
     with self.command_group('backup recoverypoint', backup_custom, client_factory=recovery_points_cf) as g:
         g.show_command('show', 'show_recovery_point')
         g.command('list', 'list_recovery_points', table_transformer=transform_recovery_point_list)
+
+    with self.command_group('backup azure-wl recoverypoint', backup_custom, client_factory=recovery_points_cf) as g:
+        g.show_command('logchain show', 'show_recovery_point_logchain')
+        g.command('list', 'list_wl_recovery_points', table_transformer=transform_wl_recovery_point_list)
 
     with self.command_group('backup restore', backup_custom, client_factory=restores_cf) as g:
         g.command('restore-disks', 'restore_disks')

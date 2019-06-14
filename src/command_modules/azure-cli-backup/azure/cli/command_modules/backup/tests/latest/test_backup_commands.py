@@ -175,6 +175,40 @@ class BackupTests(ScenarioTest, unittest.TestCase):
             self.check("length([?properties.friendlyName == '{vm1}'])", 1),
             self.check("length([?properties.friendlyName == '{vm2}'])", 1)])
 
+    def test_backup_wl_container(self, container_name1='shrac3', container_name2='shrac2', resource_group='shracrg', vault_name='shracsql'):
+
+        self.kwargs.update({
+            'vault': vault_name,
+            'name1': container_name1,
+            'name2': container_name2,
+            'rg': resource_group
+        })
+
+        container_json = self.cmd('backup azure-wl container show -n {name1} -v {vault} -g {rg}', checks=[
+            self.check('properties.friendlyName', '{name1}'),
+            self.check('properties.healthStatus', 'Healthy'),
+            self.check('properties.registrationStatus', 'Registered'),
+            self.check('resourceGroup', '{rg}')
+        ]).get_output_in_json()
+
+        self.kwargs['container_name'] = container_json['name']
+
+        self.cmd('backup azure-wl container show -n {container_name} -v {vault} -g {rg}', checks=[
+            self.check('properties.friendlyName', '{name1}'),
+            self.check('properties.healthStatus', 'Healthy'),
+            self.check('properties.registrationStatus', 'Registered'),
+            self.check('name', '{container_name}'),
+            self.check('resourceGroup', '{rg}')
+        ]).get_output_in_json()
+
+        self.assertIn(vault_name.lower(), container_json['id'].lower())
+        self.assertIn(container_name1.lower(), container_json['name'].lower())
+
+        self.cmd('backup azure-wl container list -v {vault} -g {rg}', checks=[
+            # self.check("length(@)", 2),
+            self.check("length([?properties.friendlyName == '{name1}'])", 1),
+            self.check("length([?properties.friendlyName == '{name2}'])", 1)])
+
     @ResourceGroupPreparer()
     @VaultPreparer()
     @PolicyPreparer(parameter_name='policy1')
@@ -209,7 +243,7 @@ class BackupTests(ScenarioTest, unittest.TestCase):
 
         self.kwargs['instantRpRetentionRangeInDays'] = 2
         self.kwargs['policy1_json']['name'] = self.kwargs['policy3']
-        self.kwargs['policy1_json']['properties']['instantRpRetentionRangeInDays']= 2
+        self.kwargs['policy1_json']['properties']['instantRpRetentionRangeInDays'] = 2
         self.kwargs['policy1_json'] = json.dumps(self.kwargs['policy1_json'])
 
         self.cmd("backup policy set -g {rg} -v {vault} --policy '{policy1_json}'", checks=[
@@ -220,7 +254,7 @@ class BackupTests(ScenarioTest, unittest.TestCase):
         self.kwargs['policy1_json'] = self.cmd('backup policy show -g {rg} -v {vault} -n {policy1}', checks=[
             self.check('name', '{policy1}'),
             self.check('resourceGroup', '{rg}'),
-            self.check('properties.instantRpRetentionRangeInDays','{instantRpRetentionRangeInDays}')
+            self.check('properties.instantRpRetentionRangeInDays', '{instantRpRetentionRangeInDays}')
         ]).get_output_in_json()
 
         self.cmd('backup policy list-associated-items -g {rg} -v {vault} -n {default}', checks=[
@@ -330,6 +364,86 @@ class BackupTests(ScenarioTest, unittest.TestCase):
         item1_json = self.cmd('backup item show -g {rg} -v {vault} -c {container1} -n {vm1}').get_output_in_json()
         self.assertIn(policy_name.lower(), item1_json['properties']['policyId'].lower())
 
+    def test_backup_wl_item(self, container_name1='shrac3', container_name2='shrac2', resource_group='shracrg', vault_name='shracsql', policy_name='HourlyLogBackup'):
+
+        self.kwargs.update({
+            'vault': vault_name,
+            'name1': container_name1,
+            'name2': container_name2,
+            'policy': policy_name,
+            'default': 'HourlyLogBackup',
+            'rg': resource_group,
+            'item1': "shracsqldb101",
+            'item2': "dogfooddb103"
+        })
+
+        self.kwargs['container1'] = self.cmd('backup azure-wl container show -n {name1} -v {vault} -g {rg} --query name').get_output_in_json()
+        self.kwargs['container2'] = self.cmd('backup azure-wl container show -n {name2} -v {vault} -g {rg} --query name').get_output_in_json()
+
+        item1_json = self.cmd('backup azure-wl item show -g {rg} -v {vault} -c {container1} -n {item1} -wt MSSQL', checks=[
+            self.check('properties.friendlyName', '{item1}'),
+            self.check('properties.protectedItemHealthStatus', 'NotReachable'),
+            self.check('properties.protectionState', 'IRPending'),
+            self.check('properties.protectionStatus', 'Healthy'),
+            self.check('resourceGroup', '{rg}')
+        ]).get_output_in_json()
+
+        self.assertIn(vault_name.lower(), item1_json['id'].lower())
+        self.assertIn(container_name1.lower(), item1_json['properties']['containerName'].lower())
+        self.assertIn(container_name1.lower(), item1_json['properties']['sourceResourceId'].lower())
+        self.assertIn(self.kwargs['default'].lower(), item1_json['properties']['policyId'].lower())
+
+        self.kwargs['container1_fullname'] = self.cmd('backup azure-wl container show -n {name1} -v {vault} -g {rg} --query name').get_output_in_json()
+
+        self.cmd('backup azure-wl item show -g {rg} -v {vault} -c {container1_fullname} -n {item1} -wt MSSQL', checks=[
+            self.check('properties.friendlyName', '{item1}'),
+            self.check('properties.protectedItemHealthStatus', 'NotReachable'),
+            self.check('properties.protectionState', 'IRPending'),
+            self.check('properties.protectionStatus', 'Healthy'),
+            self.check('resourceGroup', '{rg}')
+        ])
+
+        self.kwargs['item1_fullname'] = item1_json['name']
+
+        self.cmd('backup azure-wl item show -g {rg} -v {vault} -c {container1_fullname} -n {item1_fullname} -wt MSSQL', checks=[
+            self.check('properties.friendlyName', '{item1}'),
+            self.check('properties.protectedItemHealthStatus', 'NotReachable'),
+            self.check('properties.protectionState', 'IRPending'),
+            self.check('properties.protectionStatus', 'Healthy'),
+            self.check('resourceGroup', '{rg}')
+        ])
+
+        self.cmd('backup azure-wl item list -g {rg} -v {vault} -c {container1} -wt MSSQL', checks=[
+            # self.check("length(@)", 1),
+            self.check("length([?properties.friendlyName == '{item1}'])", 1)
+        ])
+
+        self.cmd('backup azure-wl item list -g {rg} -v {vault} -c {container1_fullname} -wt MSSQL', checks=[
+            # self.check("length(@)", 1),
+            self.check("length([?properties.friendlyName == '{item1}'])", 1)
+        ])
+
+        self.cmd('backup azure-wl item list -g {rg} -v {vault} -c {container2} -wt MSSQL', checks=[
+            self.check("length(@)", 1),
+            self.check("length([?properties.friendlyName == '{item2}'])", 1)
+        ])
+
+        self.cmd('backup azure-wl item list -g {rg} -v {vault} -wt MSSQL', checks=[
+            # self.check("length(@)", 2),
+            self.check("length([?properties.friendlyName == '{item1}'])", 1),
+            self.check("length([?properties.friendlyName == '{item2}'])", 1)
+        ])
+
+        # self.cmd('backup azure-wl item set-policy -g {rg} -v {vault} -c {container1} -n {item1} -p {policy}', checks=[
+        #    self.check("properties.entityFriendlyName", '{item1}'),
+        #    self.check("properties.operation", "ConfigureBackup"),
+        #    self.check("properties.status", "Completed"),
+        #    self.check("resourceGroup", '{rg}')
+        # ])
+
+        item1_json = self.cmd('backup azure-wl item show -g {rg} -v {vault} -c {container1} -n {item1} -wt MSSQL').get_output_in_json()
+        self.assertIn(policy_name.lower(), item1_json['properties']['policyId'].lower())
+
     @ResourceGroupPreparer()
     @VaultPreparer()
     @VMPreparer()
@@ -361,6 +475,30 @@ class BackupTests(ScenarioTest, unittest.TestCase):
         ]).get_output_in_json()
         self.assertIn(vault_name.lower(), rp2_json['id'].lower())
         self.assertIn(vm_name.lower(), rp2_json['id'].lower())
+
+    def test_backup_wl_rp(self, container_name='VMAppContainer;compute;shracrg;shrac4', resource_group='shracrg', vault_name='shracsql', item_name='msdb'):
+
+        self.kwargs.update({
+            'vault': vault_name,
+            'name': container_name,
+            'rg': resource_group,
+            'item': item_name
+        })
+        self.cmd('backup azure-wl recoverypoint list -g {rg} -v {vault} -c {name} -i {item} -wt MSSQL --query [].name', checks=[
+            self.check("length(@)", 2)
+        ]).get_output_in_json()
+
+        rp1_json = self.cmd('backup azure-wl recoverypoint logchain show -g {rg} -v {vault} -c {name} -i {item} -wt MSSQL', checks=[
+            self.check('[].resourceGroup', '[\'{rg}\']')
+        ]).get_output_in_json()
+        self.assertIn(vault_name.lower(), rp1_json[0]['id'].lower())
+        self.assertIn(container_name.lower(), rp1_json[0]['id'].lower())
+
+        rp2_json = self.cmd('backup azure-wl recoverypoint logchain show -g {rg} -v {vault} -c {name} -i {item} -wt MSSQL', checks=[
+            self.check('[].resourceGroup', '[\'{rg}\']')
+        ]).get_output_in_json()
+        self.assertIn(vault_name.lower(), rp2_json[0]['id'].lower())
+        self.assertIn(container_name.lower(), rp2_json[0]['id'].lower())
 
     @ResourceGroupPreparer()
     @VaultPreparer()
@@ -495,3 +633,79 @@ class BackupTests(ScenarioTest, unittest.TestCase):
                  checks=self.check("length([?name == '{job}'])", 1))
 
         self.cmd('backup job stop -g {rg} -v {vault} -n {job}')
+
+    def test_backup_protectable_item(self, container_name1='shrac3', container_name2='shrac2', resource_group='shracrg', vault_name='shracsql', policy_name='HourlyLogBackup'):
+
+        self.kwargs.update({
+            'vault': vault_name,
+            'name1': container_name1,
+            'name2': container_name2,
+            'policy': policy_name,
+            'default': 'HourlyLogBackup',
+            'rg': resource_group,
+            'item1': "shracsqldb101",
+            'item2': "dogfooddb103",
+            'name': 'mssqlserer'
+        })
+
+        # self.kwargs['container1'] = self.cmd('backup azure-wl container show -n {name1} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
+        # self.kwargs['container2'] = self.cmd('backup azure-wl container show -n {name2} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
+
+        self.kwargs['name'] = self.cmd('backup azure-wl protectable-item list -g {rg} -v {vault} --query [0].name').get_output_in_json()
+
+        item1_json = self.cmd('backup azure-wl protectable-item show -g {rg} -v {vault} -n {name}', checks=[
+            self.check('properties.friendlyName', '{name}'),
+            self.check('properties.protectedItemHealthStatus', 'NotReachable'),
+            self.check('properties.protectionState', 'IRPending'),
+            self.check('properties.protectionStatus', 'Healthy'),
+            self.check('resourceGroup', '{rg}')
+        ]).get_output_in_json()
+
+        self.assertIn(vault_name.lower(), item1_json['id'].lower())
+        self.assertIn(container_name1.lower(), item1_json['properties']['containerName'].lower())
+        self.assertIn(container_name1.lower(), item1_json['properties']['sourceResourceId'].lower())
+        self.assertIn(self.kwargs['default'].lower(), item1_json['properties']['policyId'].lower())
+
+        self.kwargs['container1_fullname'] = self.cmd('backup azure-wl container show -n {name1} -v {vault} -g {rg} --query name').get_output_in_json()
+
+        self.cmd('backup azure-wl item show -g {rg} -v {vault} -c {container1_fullname} -n {item1}', checks=[
+            self.check('properties.friendlyName', '{item1}'),
+            self.check('properties.protectedItemHealthStatus', 'NotReachable'),
+            self.check('properties.protectionState', 'IRPending'),
+            self.check('properties.protectionStatus', 'Healthy'),
+            self.check('resourceGroup', '{rg}')
+        ])
+
+        self.kwargs['item1_fullname'] = item1_json['name']
+
+        self.cmd('backup azure-wl item show -g {rg} -v {vault} -c {container1_fullname} -n {item1_fullname}', checks=[
+            self.check('properties.friendlyName', '{item1}'),
+            self.check('properties.protectedItemHealthStatus', 'NotReachable'),
+            self.check('properties.protectionState', 'IRPending'),
+            self.check('properties.protectionStatus', 'Healthy'),
+            self.check('resourceGroup', '{rg}')
+        ])
+
+        self.cmd('backup azure-wl item list -g {rg} -v {vault} -c {container1}', checks=[
+            #self.check("length(@)", 1),
+            self.check("length([?properties.friendlyName == '{item1}'])", 1)
+        ])
+
+        self.cmd('backup azure-wl item list -g {rg} -v {vault} -c {container1_fullname}', checks=[
+            #self.check("length(@)", 1),
+            self.check("length([?properties.friendlyName == '{item1}'])", 1)
+        ])
+
+        self.cmd('backup azure-wl item list -g {rg} -v {vault} -c {container2}', checks=[
+            self.check("length(@)", 1),
+            self.check("length([?properties.friendlyName == '{item2}'])", 1)
+        ])
+
+        self.cmd('backup azure-wl item list -g {rg} -v {vault}', checks=[
+            #self.check("length(@)", 2),
+            self.check("length([?properties.friendlyName == '{item1}'])", 1),
+            self.check("length([?properties.friendlyName == '{item2}'])", 1)
+        ])
+
+        item1_json = self.cmd('backup azure-wl item show -g {rg} -v {vault} -c {container1} -n {item1}').get_output_in_json()
+        self.assertIn(policy_name.lower(), item1_json['properties']['policyId'].lower())

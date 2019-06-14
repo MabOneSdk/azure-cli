@@ -96,11 +96,34 @@ def get_default_policy_for_vm(client, resource_group_name, vault_name):
 
 
 def show_policy(client, resource_group_name, vault_name, name):
-    return client.get(vault_name, resource_group_name, name)
+    return [client.get(vault_name, resource_group_name, name)]
 
 
 def list_policies(client, resource_group_name, vault_name):
     policies = client.list(vault_name, resource_group_name)
+    return _get_list_from_paged_response(policies)
+
+
+def list_wl_policies(cmd, client, resource_group_name, vault_name, workload_type):
+
+    # Mapping from command to container type and item type
+    map = {'azure-wl': ['AzureWorkload', 'SQLDataBase']}
+
+    # Extracting command
+    command = cmd.name.split()[1]
+    backup_management_type = map[command]
+
+    # Mapping of workload type
+    map_wt = {'MSSQL': 'SQLDataBase',
+              'SAPHANA': 'SAPHanaDatabase'}
+
+    workload_type = map_wt[workload_type]
+
+    filter_string = _get_filter_string({
+        'backupManagementType': backup_management_type,
+        'workloadType': workload_type})
+
+    policies = client.list(vault_name, resource_group_name, filter_string)
     return _get_list_from_paged_response(policies)
 
 
@@ -113,17 +136,19 @@ def list_associated_items_for_policy(client, resource_group_name, vault_name, na
 
 def set_policy(client, resource_group_name, vault_name, policy):
     policy_object = _get_policy_from_json(client, policy)
-    retention_range_in_days=policy_object.properties.instant_rp_retention_range_in_days
-    schedule_run_frequency=policy_object.properties.schedule_policy.schedule_run_frequency
-    if retention_range_in_days !=5 and schedule_run_frequency=='Weekly':
+    retention_range_in_days = policy_object.properties.instant_rp_retention_range_in_days
+    schedule_run_frequency = policy_object.properties.schedule_policy.schedule_run_frequency
+
+    # Validating range of days input
+    if schedule_run_frequency == 'Weekly' and retention_range_in_days != 5:
         raise CLIError(
             """
             Retention policy range must be equal to 5.
             """)
-    if (retention_range_in_days>5 or retention_range_in_days<1) and schedule_run_frequency=='Daily':
+    if schedule_run_frequency == 'Daily' and (retention_range_in_days > 5 or retention_range_in_days < 1):
         raise CLIError(
             """
-            Retention policy range must be between 1 to 5. 
+            Retention policy range must be between 1 to 5.
             """)
 
     return client.create_or_update(vault_name, resource_group_name, policy_object.name, policy_object)
@@ -133,11 +158,39 @@ def delete_policy(client, resource_group_name, vault_name, name):
     client.delete(vault_name, resource_group_name, name)
 
 
+def register_wl_container(client, vault_name, resource_group_name):
+    pass
+
+
 def show_container(client, name, resource_group_name, vault_name, container_type="AzureIaasVM", status="Registered"):
     return _get_none_one_or_many(_get_containers(client, container_type, status, resource_group_name, vault_name, name))
 
 
 def list_containers(client, resource_group_name, vault_name, container_type="AzureIaasVM", status="Registered"):
+    return _get_containers(client, container_type, status, resource_group_name, vault_name)
+
+
+def show_wl_container(cmd, client, name, resource_group_name, vault_name, status="Registered"):
+
+    # Mapping from command to container type
+    map = {'azure-wl': 'AzureWorkload'}
+
+    # Extracting command
+    command = cmd.name.split()[1]
+    container_type = map[command]
+
+    return _get_none_one_or_many(_get_containers(client, container_type, status, resource_group_name, vault_name, name))
+
+
+def list_wl_containers(cmd, client, resource_group_name, vault_name, status="Registered"):
+
+    # Mapping from command to container type
+    map = {'azure-wl': 'AzureWorkload'}
+
+    # Extracting command
+    command = cmd.name.split()[1]
+    container_type = map[command]
+
     return _get_containers(client, container_type, status, resource_group_name, vault_name)
 
 
@@ -233,6 +286,52 @@ def list_items(cmd, client, resource_group_name, vault_name, container_name=None
     return paged_items
 
 
+def show_wl_item(cmd, client, resource_group_name, vault_name, container_name, name, workload_type):
+    items = list_wl_items(cmd, client, resource_group_name, vault_name, workload_type, container_name)
+
+    if _is_native_name(name):
+        filtered_items = [item for item in items if item.name == name]
+    else:
+        filtered_items = [item for item in items if item.properties.friendly_name == name]
+
+    return _get_none_one_or_many(filtered_items)
+
+
+def list_wl_items(cmd, client, resource_group_name, vault_name, workload_type, container_name=None):
+
+    # Mapping from command to container type
+    map = {'azure-wl': 'AzureWorkload'}
+
+    # Extracting command
+    command = cmd.name.split()[1]
+    container_type = map[command]
+
+    # Mapping of item type
+    map_it = {'MSSQL': 'SQLDataBase',
+              'SAPHANA': 'SAPHanaDatabase'}
+
+    item_type = map_it[workload_type]
+
+    filter_string = _get_filter_string({
+        'backupManagementType': container_type,
+        'itemType': item_type})
+
+    items = client.list(vault_name, resource_group_name, filter_string)
+    paged_items = _get_list_from_paged_response(items)
+    if container_name:
+        if _is_native_name(container_name):
+            container_uri = container_name
+        else:
+            raise CLIError("""
+            Container name passed cannot be a friendly name.
+            Please pass a native container name.
+            """)
+
+        return [item for item in paged_items if
+                _get_protection_container_uri_from_id(item.id).lower() == container_uri.lower()]
+    return paged_items
+
+
 def update_policy_for_item(cmd, client, resource_group_name, vault_name, container_name, item_name, policy_name,
                            container_type="AzureIaasVM", item_type="VM"):
     # Client factories
@@ -265,6 +364,59 @@ def update_policy_for_item(cmd, client, resource_group_name, vault_name, contain
     result = sdk_no_wait(True, client.create_or_update,
                          vault_name, resource_group_name, fabric_name, container_uri, item_uri, vm_item)
     return _track_backup_job(cmd.cli_ctx, result, vault_name, resource_group_name)
+
+
+def show_protectable_item(cmd, client, resource_group_name, vault_name, name, server_name, protectable_item_type,
+                          workload_type, container_type="AzureWorkload"):
+    items = list_protectable_items(cmd, client, resource_group_name, vault_name, workload_type, None, container_type)
+
+    # Name filter
+    if _is_native_name(name):
+        filtered_items = [item for item in items if item.name == name]
+    else:
+        filtered_items = [item for item in items if item.properties.friendly_name == name]
+
+    # Server Name filter
+    filtered_items = [item for item in filtered_items if item.properties.server_name == server_name]
+
+    # Protectable Item Type filter
+    filtered_items = [item for item in filtered_items if item.properties.protectable_item_type == protectable_item_type]
+
+    return _get_none_one_or_many(filtered_items)
+
+
+def list_protectable_items(cmd, client, resource_group_name, vault_name, workload_type, container_name=None,
+                           container_type="AzureWorkload"):
+
+    # Mapping of workload type
+    map_wt = {'MSSQL': 'SQLDataBase',
+              'SAPHANA': 'SAPHanaDatabase'}
+
+    workload_type = map_wt[workload_type]
+
+    filter_string = _get_filter_string({
+        'backupManagementType': container_type,
+        'workloadType': workload_type,
+        'containerName': container_name})
+
+    # Items list
+    items = client.list(vault_name, resource_group_name, filter_string)
+    paged_items = _get_list_from_paged_response(items)
+
+    if container_name:
+
+        # Native name condition
+        if _is_native_name(container_name):
+            container_uri = container_name
+        else:
+            container = show_wl_container(backup_protection_containers_cf(cmd.cli_ctx),
+                                          container_name, resource_group_name, vault_name)
+            _validate_container(container)
+            container_uri = container.name
+
+        return [item for item in paged_items if
+                _get_protection_container_uri_from_id(item.id).lower() == container_uri.lower()]
+    return paged_items
 
 
 def backup_now(cmd, client, resource_group_name, vault_name, container_name, item_name, retain_until,
@@ -311,6 +463,55 @@ def list_recovery_points(cmd, client, resource_group_name, vault_name, container
     query_end_date, query_start_date = _get_query_dates(end_date, start_date)
 
     filter_string = _get_filter_string({
+        'startDate': query_start_date,
+        'endDate': query_end_date})
+
+    # Get recovery points
+    recovery_points = client.list(vault_name, resource_group_name, fabric_name, container_uri, item_uri, filter_string)
+    paged_recovery_points = _get_list_from_paged_response(recovery_points)
+
+    return paged_recovery_points
+
+
+def list_wl_recovery_points(cmd, client, resource_group_name, vault_name, container_name, item_name, workload_type,
+                            start_date=None, end_date=None):
+
+    item = show_wl_item(cmd, backup_protected_items_cf(cmd.cli_ctx), resource_group_name, vault_name,
+                        container_name, item_name, workload_type)
+    _validate_item(item)
+
+    # Get container and item URIs
+    container_uri = _get_protection_container_uri_from_id(item.id)
+    item_uri = _get_protected_item_uri_from_id(item.id)
+
+    query_end_date, query_start_date = _get_query_dates(end_date, start_date)
+
+    filter_string = _get_filter_string({
+        'startDate': query_start_date,
+        'endDate': query_end_date})
+
+    # Get recovery points
+    recovery_points = client.list(vault_name, resource_group_name, fabric_name, container_uri, item_uri, filter_string)
+    paged_recovery_points = _get_list_from_paged_response(recovery_points)
+
+    return paged_recovery_points
+
+
+def show_recovery_point_logchain(cmd, client, resource_group_name, vault_name, item_name, container_name, workload_type,
+                                 start_date=None, end_date=None):
+
+    item = show_wl_item(cmd, backup_protected_items_cf(cmd.cli_ctx), resource_group_name, vault_name, container_name,
+                        item_name, workload_type)
+    _validate_item(item)
+
+    # Get container and item URIs
+    container_uri = _get_protection_container_uri_from_id(item.id)
+    item_uri = _get_protected_item_uri_from_id(item.id)
+
+    query_end_date, query_start_date = _get_query_dates(end_date, start_date)
+
+    filter_string = _get_filter_string({
+        'restorePointQueryType': 'Log',
         'startDate': query_start_date,
         'endDate': query_end_date})
 
