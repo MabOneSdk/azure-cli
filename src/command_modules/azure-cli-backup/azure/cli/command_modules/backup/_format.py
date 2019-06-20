@@ -15,15 +15,13 @@ def transform_container(result):
 
 def transform_wl_container(result):
     columns = []
-    columns.append(('Name', result['properties']['friendlyName']))
+    columns.append(('Name', result['name']))
     columns.append(('Status', result['properties']['registrationStatus']))
     columns.append(('Container Type', result['properties']['containerType']))
 
     workloads = [workload['type'] for workload in result['properties']['extendedInfo']['inquiryInfo']['inquiryDetails']]
 
-    workloads = ', '.join(workloads)
-    columns.append(('WorkloadsPresent', workloads))
-
+    columns.append(('Workloads Present', ', '.join(workloads)))
     columns.append(('Health Status', result['properties']['healthStatus']))
 
     return OrderedDict(columns)
@@ -62,7 +60,7 @@ def transform_wl_item(result):
 def transform_protectable_item(result):
     columns = []
     columns.append(('Name', result['properties']['friendlyName']))
-    columns.append(('ProtectableItemType', result['properties']['protectableItemType']))
+    columns.append(('Protectable Item Type', result['properties']['protectableItemType']))
     columns.append(('ParentName', result['properties']['parentName']))
     columns.append(('ServerName', result['properties']['serverName']))
     columns.append(('isProtected', result['properties']['protectionState']))
@@ -93,13 +91,12 @@ def transform_wl_policy(result):
                         ('WorkloadType', result['properties']['workLoadType'])])
 
 
-def transform_wl_policy_s(result):
+def transform_workload_policy_show(result):
     columns = []
     columns.append(('Name', result['name']))
     columns.append(('WorkloadType', result['properties']['workLoadType']))
 
     sub_protection_policy = result['properties']['subProtectionPolicy']
-
     differential, log = [False] * 2
 
     for policy in sub_protection_policy:
@@ -139,6 +136,34 @@ def transform_wl_recovery_point(result):
                         ('BackupManagementType', "AzureWorkload"),
                         ('Item Name', result['id'].split('/')[14]),
                         ('RecoveryPointType', result['properties']['objectType'])])
+
+
+def transform_containers_list(container_list):
+    if len(container_list) != 0 and container_list[0]['properties']['backupManagementType'] == 'AzureWorkload':
+        return transform_wl_container_list(container_list)
+    else:
+        return transform_container_list(container_list)
+
+
+def transform_policies_list(policy_list):
+    if len(policy_list) != 0 and policy_list[0]['properties']['backupManagementType'] == 'AzureWorkload':
+        return transform_wl_policy_list(policy_list)
+    else:
+        return transform_policy_list(policy_list)
+
+
+def transform_items_list(item_list):
+    if len(item_list) != 0 and item_list[0]['properties']['backupManagementType'] == 'AzureWorkload':
+        return transform_wl_item_list(item_list)
+    else:
+        return transform_item_list(item_list)
+
+
+def transform_recovery_points_list(recovery_point_list):
+    if len(recovery_point_list) != 0 and recovery_point_list[0]['id'].split('/')[12].split(';')[0] == 'VMAppContainer':
+        return transform_wl_recovery_point_list(recovery_point_list)
+    else:
+        return transform_recovery_point_list(recovery_point_list)
 
 
 def transform_container_list(container_list):
@@ -182,4 +207,5 @@ def transform_wl_policy_list(policy_list):
 
 
 def transform_wl_policy_show(policy_list):
-    return [transform_wl_policy_s(p) for p in policy_list]
+    if type(policy_list) == list and len(policy_list) != 0 and policy_list[0]['properties']['backupManagementType'] == 'AzureWorkload':
+        return [transform_workload_policy_show(p) for p in policy_list]

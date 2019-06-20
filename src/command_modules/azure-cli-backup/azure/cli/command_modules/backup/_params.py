@@ -14,8 +14,7 @@ from azure.cli.core.commands.parameters import \
     (get_resource_name_completion_list, file_type, get_three_state_flag,
      get_enum_type)
 from azure.cli.core.commands.validators import get_default_location_from_resource_group
-from azure.cli.command_modules.backup._validators import \
-    (datetime_type)
+from azure.cli.command_modules.backup._validators import datetime_type
 
 
 # ARGUMENT DEFINITIONS
@@ -29,7 +28,9 @@ item_name_type = CLIArgumentType(help='Name of the backed up item.', options_lis
 policy_name_type = CLIArgumentType(help='Name of the backup policy.', options_list=['--policy-name', '-p'])
 job_name_type = CLIArgumentType(help='Name of the job.', options_list=['--name', '-n'])
 rp_name_type = CLIArgumentType(help='Name of the recovery point.', options_list=['--rp-name', '-r'])
-wl_type = CLIArgumentType(help = "Name of the workload type", arg_type=get_enum_type(['MSSQL', 'SAPHANA']), options_list=['--workload-type', '-wt'])
+backup_management_type = CLIArgumentType(help='Name of the backup management type.', arg_type=get_enum_type(['AzureWorkload', 'AzureIaasVM']), options_list=['--backup-management-type', '-bmt'])
+wl_type = CLIArgumentType(help='Name of the workload type.', arg_type=get_enum_type(['MSSQL', 'SAPHANA']), options_list=['--workload-type', '-wt'])
+
 
 # pylint: disable=too-many-statements
 def load_arguments(self, _):
@@ -49,6 +50,7 @@ def load_arguments(self, _):
     # Container
     with self.argument_context('backup container') as c:
         c.argument('vault_name', vault_name_type, id_part='name')
+        c.argument('container_type', backup_management_type)
         c.ignore('status')
 
     with self.argument_context('backup container show') as c:
@@ -57,21 +59,23 @@ def load_arguments(self, _):
     with self.argument_context('backup container list') as c:
         c.argument('vault_name', vault_name_type, id_part=None)
 
-    with self.argument_context('backup azure-wl container') as c:
-        c.argument('vault_name', vault_name_type, id_part='name')
-        c.ignore('status')
-        #c.argument('workload_type', wl_type)
+    with self.argument_context('backup container register') as c:
+        c.argument('workload_type', wl_type)
+        c.argument('resource_id', options_list=['--resource-id', '-id'], help='ID of the Azure Resource containing items to be protected by Azure Backup service. Currently, only Azure VM resource IDs are supported.')
 
-    with self.argument_context('backup azure-wl container show') as c:
-        c.argument('name', container_name_type, options_list=['--name', '-n'], help='Name of the container. You can use the backup container list command to get the name of a container.')
+    with self.argument_context('backup container re-register') as c:
+        c.argument('workload_type', wl_type)
+        c.argument('container_name', container_name_type, options_list=['--name', '-n'], help='Name of the container. You can use the backup container list command to get the name of a container.')
 
-    with self.argument_context('backup azure-wl container list') as c:
-        c.argument('vault_name', vault_name_type, id_part=None)
+    with self.argument_context('backup container unregister') as c:
+        c.argument('container_name', container_name_type, options_list=['--name', '-n'], help='Name of the container. You can use the backup container list command to get the name of a container.')
 
     # Item
     with self.argument_context('backup item') as c:
         c.argument('vault_name', vault_name_type, id_part='name')
         c.argument('container_name', container_name_type)
+        c.argument('container_type', backup_management_type)
+        c.argument('workload_type', wl_type)
 
     with self.argument_context('backup item show') as c:
         c.argument('name', item_name_type, options_list=['--name', '-n'], help='Name of the backed up item. You can use the backup item list command to get the name of a backed up item.')
@@ -84,35 +88,15 @@ def load_arguments(self, _):
     with self.argument_context('backup item list') as c:
         c.argument('vault_name', vault_name_type, id_part=None)
 
-    # Item
-    with self.argument_context('backup azure-wl item') as c:
-        c.argument('vault_name', vault_name_type, id_part='name')
-        c.argument('container_name', container_name_type)
-        c.argument('workload_type', wl_type)
-
-    with self.argument_context('backup azure-wl item show') as c:
-        c.argument('name', item_name_type, options_list=['--name', '-n'], help='Name of the backed up item. You can use the backup item list command to get the name of a backed up item.')
-        c.argument('container_name', options_list=['--container-name', '-c'])
-
-    with self.argument_context('backup azure-wl item set-policy') as c:
-        c.argument('item_name', item_name_type, options_list=['--name', '-n'], id_part='name', help='Name of the backed up item. You can use the backup item list command to get the name of a backed up item.')
-        c.argument('policy_name', policy_name_type, help='Name of the Backup policy. You can use the backup policy list command to get the name of a backup policy.')
-
-    with self.argument_context('backup azure-wl item list') as c:
-        c.argument('vault_name', vault_name_type, id_part=None)
-        
     # Protectable Item
-    with self.argument_context('backup azure-wl protectable-item') as c:
+    with self.argument_context('backup protectable-item') as c:
         c.argument('vault_name', vault_name_type, id_part='name')
         c.argument('workload_type', wl_type)
 
-    with self.argument_context('backup azure-wl protectable-item show') as c:
+    with self.argument_context('backup protectable-item show') as c:
         c.argument('name', item_name_type, options_list=['--name', '-n'], help='Name of the backed up protectable item. You can use the backup protectable-item list command to get the name of a backed up protectable item.')
         c.argument('server_name', options_list=['--server-name', '-s'])
         c.argument('protectable_item_type', arg_type=get_enum_type(['SQLAG', 'SQLInstance', 'SQLDataBase', 'HANAInstance', 'HANADataBase']), options_list=['--protectable-item-type', '-pit'])
-
-    with self.argument_context('backup azure-wl protectable-item list') as c:
-        c.argument('vault_name', vault_name_type, id_part=None)
 
     # Policy
     with self.argument_context('backup policy') as c:
@@ -126,17 +110,11 @@ def load_arguments(self, _):
         c.argument('policy', type=file_type, help='JSON encoded policy definition. Use the show command with JSON output to obtain a policy object. Modify the values using a file editor and pass the object.', completer=FilesCompleter())
 
     with self.argument_context('backup policy list') as c:
-        c.argument('vault_name', vault_name_type, id_part=None)
-
-    with self.argument_context('backup azure-wl policy') as c:
-        c.argument('vault_name', vault_name_type, id_part='name')
-
-    with self.argument_context('backup azure-wl policy list') as c:
-        c.argument('vault_name', vault_name_type, id_part=None)
         c.argument('workload_type', wl_type)
+        c.argument('container_type', backup_management_type)
 
-    with self.argument_context('backup azure-wl policy show') as c:
-        c.argument('name', policy_name_type, options_list=['--name', '-n'], help='Name of the backup policy. You can use the backup policy list command to get the name of a policy.')
+    with self.argument_context('backup policy show') as c:
+        c.argument('container_type', backup_management_type)
 
     # Recovery Point
     # TODO: Need to use item.id once https://github.com/Azure/msrestazure-for-python/issues/80 is fixed.
@@ -144,30 +122,21 @@ def load_arguments(self, _):
         c.argument('vault_name', vault_name_type, id_part='name')
         c.argument('container_name', container_name_type)
         c.argument('item_name', item_name_type)
+        c.argument('start_date', type=datetime_type, help='The start date of the range in UTC (d-m-Y).')
+        c.argument('end_date', type=datetime_type, help='The end date of the range in UTC (d-m-Y).')
 
     with self.argument_context('backup recoverypoint list') as c:
         c.argument('vault_name', vault_name_type, id_part=None)
-        c.argument('start_date', type=datetime_type, help='The start date of the range in UTC (d-m-Y).')
-        c.argument('end_date', type=datetime_type, help='The end date of the range in UTC (d-m-Y).')
+        c.argument('workload_type', wl_type)
+        c.argument('container_type', backup_management_type)
 
     with self.argument_context('backup recoverypoint show') as c:
         c.argument('name', rp_name_type, options_list=['--name', '-n'], help='Name of the recovery point. You can use the backup recovery point list command to get the name of a backed up item.')
 
-    with self.argument_context('backup azure-wl recoverypoint') as c:
-        c.argument('vault_name', vault_name_type, id_part='name')
-        c.argument('container_name', container_name_type)
-        c.argument('item_name', item_name_type)
+    with self.argument_context('backup recoverypoint logchain show') as c:
+        c.argument('start_date', type=datetime_type, help='The start date of the range in UTC (d-m-Y).')
+        c.argument('end_date', type=datetime_type, help='The end date of the range in UTC (d-m-Y).')
         c.argument('workload_type', wl_type)
-
-    with self.argument_context('backup azure-wl recoverypoint list') as c:
-        c.argument('vault_name', vault_name_type, id_part=None)
-        c.argument('start_date', type=datetime_type, help='The start date of the range in UTC (d-m-Y).')
-        c.argument('end_date', type=datetime_type, help='The end date of the range in UTC (d-m-Y).')
-
-    with self.argument_context('backup azure-wl recoverypoint logchain show') as c:
-        c.argument('item_name', item_name_type, options_list=['--item-name', '-i'])
-        c.argument('start_date', type=datetime_type, help='The start date of the range in UTC (d-m-Y).')
-        c.argument('end_date', type=datetime_type, help='The end date of the range in UTC (d-m-Y).')
 
     # Protection
     with self.argument_context('backup protection') as c:
