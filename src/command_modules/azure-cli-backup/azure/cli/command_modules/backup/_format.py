@@ -138,6 +138,15 @@ def transform_wl_recovery_point(result):
                         ('RecoveryPointType', result['properties']['objectType'])])
 
 
+def transform_enable_protection_for_azure_wl(result):
+    return OrderedDict([('Workload Name', result['properties']['entityFriendlyName']),
+                        ('Operation', result['properties']['operation']),
+                        ('Status', result['properties']['status']),
+                        ('Start Time', result['properties']['startTime']),
+                        ('End Time', result['properties']['endTime']),
+                        ('Job Id', result['properties']['activityId'])])
+
+
 def transform_containers_list(container_list):
     if len(container_list) != 0 and container_list[0]['properties']['backupManagementType'] == 'AzureWorkload':
         return transform_wl_container_list(container_list)
@@ -204,6 +213,11 @@ def transform_wl_item_list(item_list):
 
 def transform_wl_policy_list(policy_list):
     return [transform_wl_policy(p) for p in policy_list]
+
+
+def transform_wl_policy_set(policy):
+    if policy['properties']['backupManagementType'] == 'AzureWorkload':
+        return [transform_workload_policy_show(p) for p in [policy]]
 
 
 def transform_wl_policy_show(policy_list):

@@ -8,10 +8,11 @@ from azure.cli.command_modules.backup._client_factory import vaults_cf, backup_p
     protection_policies_cf, backup_policies_cf, protected_items_cf, backups_cf, backup_jobs_cf, \
     job_details_cf, job_cancellations_cf, recovery_points_cf, restores_cf, backup_storage_configs_cf, \
     item_level_recovery_connections_cf, backup_protected_items_cf, backup_protectable_items_cf, \
-    protectable_items_cf, protection_containers_cf  # pylint: disable=unused-variable
+    protectable_items_cf, protection_containers_cf, protection_intent_cf  # pylint: disable=unused-variable
 from azure.cli.command_modules.backup._format import (
     transform_item_list, transform_job_list, transform_protectable_item_list, transform_recovery_points_list,
-    transform_wl_policy_show, transform_containers_list, transform_policies_list, transform_items_list)
+    transform_wl_policy_show, transform_containers_list, transform_policies_list, transform_items_list,
+    transform_enable_protection_for_azure_wl, transform_wl_policy_set)
 
 
 # pylint: disable=line-too-long
@@ -49,15 +50,18 @@ def load_command_table(self, _):
         g.show_command('show', 'show_policy', table_transformer=transform_wl_policy_show)
         g.command('list', 'list_policies', client_factory=backup_policies_cf, table_transformer=transform_policies_list)
         g.command('list-associated-items', 'list_associated_items_for_policy', client_factory=backup_protected_items_cf, table_transformer=transform_item_list)
-        g.command('set', 'set_policy')
+        g.command('set', 'set_policy', table_transformer=transform_wl_policy_set)
         g.command('delete', 'delete_policy')
+        g.command('new', 'new_policy', table_transformer=transform_wl_policy_set)
 
     with self.command_group('backup protection', backup_custom_base, client_factory=protected_items_cf) as g:
         g.command('check-vm', 'check_protection_enabled_for_vm')
         g.command('enable-for-vm', 'enable_protection_for_vm')
-        g.command('enable-for-AzureWL', 'enable_protection_for_azure_wl')
+        g.command('enable-for-azurewl', 'enable_protection_for_azure_wl', table_transformer=transform_enable_protection_for_azure_wl)
         g.command('backup-now', 'backup_now', client_factory=backups_cf)
         g.command('disable', 'disable_protection', confirmation=True)
+        g.command('auto-enable-for-azurewl', 'auto_enable_for_azure_wl', client_factory=protection_intent_cf)
+        g.command('disable auto-for-azurewl', 'disable_auto_for_azure_wl', client_factory=protection_intent_cf)
 
     with self.command_group('backup item', backup_custom_base, client_factory=backup_protected_items_cf) as g:
         g.show_command('show', 'show_item')
@@ -67,7 +71,7 @@ def load_command_table(self, _):
     with self.command_group('backup protectable-item', backup_custom_base, client_factory=backup_protectable_items_cf) as g:
         g.show_command('show', 'show_protectable_item')
         g.command('list', 'list_protectable_items', table_transformer=transform_protectable_item_list)
-        g.command('initialize', 'initialize_protectable_items', client_factory=protectable_items_cf)
+        g.command('initialize', 'initialize_protectable_items', client_factory=protection_containers_cf)
 
     with self.command_group('backup job', backup_custom, client_factory=job_details_cf) as g:
         g.command('list', 'list_jobs', client_factory=backup_jobs_cf, table_transformer=transform_job_list)

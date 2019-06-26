@@ -55,6 +55,10 @@ def backup_storage_configs_cf(cli_ctx, *_):
 
 
 # Protection Client Factories
+def protection_intent_cf(cli_ctx, *_):
+    return _backup_client_factory(cli_ctx).protection_intent
+
+
 def protection_policies_cf(cli_ctx, *_):
     return _backup_client_factory(cli_ctx).protection_policies
 

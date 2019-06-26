@@ -5,6 +5,7 @@
 
 import azure.cli.command_modules.backup.custom as custom
 import azure.cli.command_modules.backup.custom_wl as custom_wl
+import azure.cli.command_modules.backup.custom_help as custom_help
 # pylint: disable=import-error
 
 from knack.log import get_logger
@@ -72,22 +73,53 @@ def list_recovery_points(cmd, client, resource_group_name, vault_name, container
                                                  start_date, end_date)
 
 
-def backup_now(cmd, client, resource_group_name, vault_name, container_name, item_name, retain_until,
-               container_type="AzureIaasVM", item_type="VM"):
-    if container_type == "AzureIaasVM":
+def backup_now(cmd, client, resource_group_name, vault_name, item_name, retain_until, container_name=None,
+               container_type="AzureIaasVM", item_type="VM", backup_type=None, enable_compression=False):
+    if backup_type is None:
         return custom.backup_now(cmd, client, resource_group_name, vault_name, container_name, item_name, retain_until,
                                  container_type, item_type)
     else:
-        return custom_wl.backup_now()
+        return custom_wl.backup_now(cmd, client, resource_group_name, vault_name, container_name, item_name, retain_until, backup_type,
+                                    enable_compression)
 
 
-def disable_protection(cmd, client, resource_group_name, vault_name, container_name, item_name,
+def disable_protection(cmd, client, resource_group_name, vault_name, item_name, container_name=None,
                        container_type="AzureIaasVM", item_type="VM", delete_backup_data=False, **kwargs):
-    if container_type == "AzureIaasVM":
+    if (custom_help._is_id(item_name) and custom_help._is_wl_container(item_name)) or (container_name is not None and 
+                                                                                       custom_help._is_wl_container(item_name)):
+        return custom_wl.disable_protection(cmd, client, resource_group_name, vault_name, container_name, item_name, delete_backup_data)
+    else:
         return custom.disable_protection(cmd, client, resource_group_name, vault_name, container_name, item_name,
                                          container_type, item_type, delete_backup_data, **kwargs)
+
+
+def update_policy_for_item(cmd, client, resource_group_name, vault_name, item_name, policy_name, item_type="VM",
+                           container_type="AzureIaasVM", container_name=None):
+    if container_type != "AzureIaasVM" or (custom_help._is_wl_container(item_name) and (custom_help._is_id(item_name) or 
+                                                                                        container_name is not None)):
+        return custom_wl.update_policy_for_item(cmd, client, resource_group_name, vault_name, container_name, 
+                                                item_name, policy_name, container_type)
     else:
-        return custom_wl.disable_protection()
+        return custom.update_policy_for_item(cmd, client, resource_group_name, vault_name, container_name, 
+                                             item_name, policy_name)
+
+
+def set_policy(client, resource_group_name, vault_name, policy, name=None):
+    policy_object = custom_help._get_policy_from_json(client, policy)
+    if policy_object.properties.backup_management_type == "AzureWorkload":
+        return custom_wl.set_policy(client, resource_group_name, vault_name, policy, name)
+    else:
+        return custom.set_policy(client, resource_group_name, vault_name, policy)
+
+
+def new_policy(client, resource_group_name, vault_name, policy, name, workload_type, container_type="AzureWorkload"):
+    return custom_wl.new_policy(client, resource_group_name, vault_name, policy, name, container_type, workload_type)
+
+
+def show_recovery_point(cmd, client, resource_group_name, vault_name, container_name, item_name, name,
+                        container_type="AzureIaasVM", item_type="VM"):
+    return custom.show_recovery_point(cmd, client, resource_group_name, vault_name, container_name, item_name, name,
+                                      container_type, item_type)
 
 
 def list_protectable_items(cmd, client, resource_group_name, vault_name, workload_type, container_name=None,
@@ -102,10 +134,8 @@ def show_protectable_item(cmd, client, resource_group_name, vault_name, name, se
                                            workload_type, container_type)
 
 
-def show_recovery_point(cmd, client, resource_group_name, vault_name, container_name, item_name, name,
-                        container_type="AzureIaasVM", item_type="VM"):
-    return custom.show_recovery_point(cmd, client, resource_group_name, vault_name, container_name, item_name, name,
-                                      container_type, item_type)
+def initialize_protectable_items(cmd, client, resource_group_name, vault_name, container_name, workload_type):
+    return custom_wl.initialize_protectable_items(cmd, client, resource_group_name, vault_name, container_name, workload_type)
 
 
 def unregister_wl_container(cmd, client, vault_name, resource_group_name, container_name):
@@ -128,5 +158,13 @@ def enable_protection_for_vm(cmd, client, resource_group_name, vault_name, vm, p
     return custom.enable_protection_for_vm(cmd, client, resource_group_name, vault_name, vm, policy_name)
 
 
-def enable_protection_for_azure_wl():
-    return custom_wl.enable_protection_for_azure_wl()
+def enable_protection_for_azure_wl(cmd, client, resource_group_name, vault_name, policy_name, protectable_item):
+    return custom_wl.enable_protection_for_azure_wl(cmd, client, resource_group_name, vault_name, policy_name, protectable_item)
+
+
+def auto_enable_for_azure_wl(cmd, client, resource_group_name, vault_name, policy_name, protectable_item):
+    return custom_wl.auto_enable_for_azure_wl(cmd, client, resource_group_name, vault_name, policy_name, protectable_item)
+
+
+def disable_auto_for_azure_wl(cmd, client, resource_group_name, vault_name, item_name):
+    return custom_wl.disable_auto_for_azure_wl(cmd, client, resource_group_name, vault_name, item_name)

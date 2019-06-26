@@ -42,6 +42,22 @@ def _is_native_name(name):
     return ";" in name
 
 
+def _is_id(id):
+    return "/" in id
+
+
+def _is_sql(type):
+    return type.lower() == 'sqldatabase'
+
+
+def _is_hana(type):
+    return type.lower() == 'saphanadatabase'
+
+
+def _is_wl_container(name):
+    return 'vmappcontainer' in name.lower()
+
+
 def _is_range_valid(start_date, end_date):
     if start_date > end_date:
         raise CLIError(
@@ -381,6 +397,10 @@ def _get_policy_from_json(client, policy):
 
 def _get_item_from_json(client, item):
     return _get_object_from_json(client, item, 'ProtectedItemResource')
+
+
+def _get_protectable_item_from_json(client, item):
+    return _get_object_from_json(client, item, 'WorkloadProtectableItemResource')
 
 
 def _get_job_from_json(client, job):

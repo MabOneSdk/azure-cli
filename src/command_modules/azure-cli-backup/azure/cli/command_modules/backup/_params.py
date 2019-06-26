@@ -82,7 +82,7 @@ def load_arguments(self, _):
 
     # TODO: Need to use item.id once https://github.com/Azure/msrestazure-for-python/issues/80 is fixed.
     with self.argument_context('backup item set-policy') as c:
-        c.argument('item_name', item_name_type, options_list=['--name', '-n'], id_part='name', help='Name of the backed up item. You can use the backup item list command to get the name of a backed up item.')
+        c.argument('item_name', item_name_type, options_list=['--name', '-n'], help='Name of the backed up item. You can use the backup item list command to get the name of a backed up item.')
         c.argument('policy_name', policy_name_type, help='Name of the Backup policy. You can use the backup policy list command to get the name of a backup policy.')
 
     with self.argument_context('backup item list') as c:
@@ -98,16 +98,24 @@ def load_arguments(self, _):
         c.argument('server_name', options_list=['--server-name', '-s'])
         c.argument('protectable_item_type', arg_type=get_enum_type(['SQLAG', 'SQLInstance', 'SQLDataBase', 'HANAInstance', 'HANADataBase']), options_list=['--protectable-item-type', '-pit'])
 
+    with self.argument_context('backup protectable-item') as c:
+        c.argument('container_name', container_name_type)
+
     # Policy
     with self.argument_context('backup policy') as c:
         c.argument('vault_name', vault_name_type, id_part='name')
 
-    for command in ['show', 'delete', 'list-associated-items']:
+    for command in ['show', 'delete', 'list-associated-items', 'set', 'new']:
         with self.argument_context('backup policy ' + command) as c:
             c.argument('name', policy_name_type, options_list=['--name', '-n'], help='Name of the backup policy. You can use the backup policy list command to get the name of a policy.')
 
     with self.argument_context('backup policy set') as c:
         c.argument('policy', type=file_type, help='JSON encoded policy definition. Use the show command with JSON output to obtain a policy object. Modify the values using a file editor and pass the object.', completer=FilesCompleter())
+
+    with self.argument_context('backup policy new') as c:
+        c.argument('policy', type=file_type, help='JSON encoded policy definition. Use the show command with JSON output to obtain a policy object. Modify the values using a file editor and pass the object.', completer=FilesCompleter())
+        c.argument('workload_type', wl_type)
+        c.argument('container_type', backup_management_type)
 
     with self.argument_context('backup policy list') as c:
         c.argument('workload_type', wl_type)
@@ -151,13 +159,25 @@ def load_arguments(self, _):
             c.argument('item_name', item_name_type)
 
     with self.argument_context('backup protection backup-now') as c:
-        c.argument('retain_until', type=datetime_type, help='The date until which this backed up copy will be available for retrieval, in UTC (d-m-Y).')
+        c.argument('retain_until', type=datetime_type, help='The date until which this backed up copy will be available for retrieval, in UTC (d-m-Y).', options_list=['--retain-until', '-rt'])
+        c.argument('backup_type', arg_type=get_enum_type(['Full', 'Differential', 'Log', 'CopyOnlyFull']), options_list=['--backup-type', '-bt'])
+        c.argument('enable_compression', arg_type=get_three_state_flag(), options_list=['--enable-compression', '-ec'])
 
     with self.argument_context('backup protection disable') as c:
         c.argument('delete_backup_data', arg_type=get_three_state_flag(), help='Option to delete existing backed up data in the Recovery services vault.')
 
     with self.argument_context('backup protection check-vm') as c:
         c.argument('vm_id', help='ID of the virtual machine to be checked for protection.')
+
+    with self.argument_context('backup protection enable-for-azurewl') as c:
+        c.argument('protectable_item', type=file_type, help='JSON encoded protectable item definition.', completer=FilesCompleter(), options_list=['--protectable-item', '-pi'])
+
+    with self.argument_context('backup protection auto-enable-for-azurewl') as c:
+        c.argument('protectable_item', type=file_type, help='JSON encoded protectable item definition.', completer=FilesCompleter(), options_list=['--protectable-item', '-pi'])
+        c.argument('policy_name', policy_name_type, help='Name of the Backup policy. You can use the backup policy list command to get the name of a backup policy.')
+
+    with self.argument_context('backup protection disable auto-for-azurewl') as c:
+        c.argument('item_name', item_name_type)
 
     # Restore
     # TODO: Need to use recovery_point.id once https://github.com/Azure/msrestazure-for-python/issues/80 is fixed.
