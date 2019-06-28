@@ -21,149 +21,6 @@ def _get_vm_version(vm_type):
         return 'Classic'
 
 
-def test_backup_scenario(self, resource_group, vault_name, vm_name, storage_account):
-
-    self.kwargs.update({
-        'vault': vault_name,
-        'vm': vm_name
-    })
-
-    # Enable Protection
-    self.cmd('backup protection enable-for-vm -g {rg} -v {vault} --vm {vm} -p DefaultPolicy').get_output_in_json()
-
-    # Get Container
-    self.kwargs['container'] = self.cmd('backup container show -n {vm} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
-
-    # Get Item
-    self.kwargs['item'] = self.cmd('backup item list -g {rg} -v {vault} -c {container} --query [0].properties.friendlyName').get_output_in_json()
-
-    # Trigger Backup
-    self.kwargs['retain_date'] = (datetime.utcnow() + timedelta(days=30)).strftime('%d-%m-%Y')
-    self.kwargs['job'] = self.cmd('backup protection backup-now -g {rg} -v {vault} -c {container} -i {item} --retain-until {retain_date} --query name').get_output_in_json()
-    self.cmd('backup job wait -g {rg} -v {vault} -n {job}')
-
-    # Get Recovery Point
-    self.kwargs['recovery_point'] = self.cmd('backup recoverypoint list -g {rg} -v {vault} -c {container} -i {item} --query [0].name').get_output_in_json()
-
-    # Trigger Restore
-    self.kwargs['job'] = self.cmd('backup restore restore-disks -g {rg} -v {vault} -c {container} -i {item} -r {recovery_point} --storage-account {sa} --query name --restore-to-staging-storage-account').get_output_in_json()
-    self.cmd('backup job wait -g {rg} -v {vault} -n {job}')
-
-    # Disable Protection
-    self.cmd('backup protection disable -g {rg} -v {vault} -c {container} -i {item} --delete-backup-data true --yes')
-
-
-def test_backup_vault(self, resource_group, resource_group_location, vault1, vault2):
-
-    self.kwargs.update({
-        'loc': resource_group_location,
-        'vault1': vault1,
-        'vault2': vault2
-    })
-
-    self.kwargs['vault3'] = self.create_random_name('clitest-vault', 50)
-    self.cmd('backup vault create -n {vault3} -g {rg} -l {loc}', checks=[
-        self.check('name', '{vault3}'),
-        self.check('resourceGroup', '{rg}'),
-        self.check('location', '{loc}'),
-        self.check('properties.provisioningState', 'Succeeded')
-    ])
-
-    self.kwargs['vault4'] = self.create_random_name('clitest-vault', 50)
-    self.cmd('backup vault create -n {vault4} -g {rg} -l {loc}', checks=[
-        self.check('name', '{vault4}'),
-        self.check('resourceGroup', '{rg}'),
-        self.check('location', '{loc}'),
-        self.check('properties.provisioningState', 'Succeeded')
-    ])
-
-    number_of_test_vaults = 4
-
-    self.cmd('backup vault list', checks=[
-        self.check("length([?resourceGroup == '{rg}'])", number_of_test_vaults),
-        self.check("length([?name == '{vault1}'])", 1),
-        self.check("length([?name == '{vault2}'])", 1),
-        self.check("length([?name == '{vault3}'])", 1),
-        self.check("length([?name == '{vault4}'])", 1)
-    ])
-
-    self.cmd('backup vault list -g {rg}', checks=[
-        self.check("length(@)", number_of_test_vaults),
-        self.check("length([?name == '{vault1}'])", 1),
-        self.check("length([?name == '{vault2}'])", 1),
-        self.check("length([?name == '{vault3}'])", 1),
-        self.check("length([?name == '{vault4}'])", 1)
-    ])
-
-    storage_model_types = [e.value for e in StorageType]
-    vault_properties = self.cmd('backup vault backup-properties show -n {vault1} -g {rg}', checks=[
-        JMESPathCheckExists("contains({}, properties.storageModelType)".format(storage_model_types)),
-        self.check('properties.storageTypeState', 'Unlocked'),
-        self.check('resourceGroup', '{rg}')
-    ]).get_output_in_json()
-
-    if vault_properties['properties']['storageModelType'] == StorageType.geo_redundant.value:
-        new_storage_model = StorageType.locally_redundant.value
-    else:
-        new_storage_model = StorageType.geo_redundant.value
-
-    self.kwargs['model'] = new_storage_model
-    self.cmd('backup vault backup-properties set -n {vault1} -g {rg} --backup-storage-redundancy {model}')
-
-    self.cmd('backup vault backup-properties show -n {vault1} -g {rg}', checks=[
-        self.check('properties.storageModelType', new_storage_model)
-    ])
-
-    self.cmd('backup vault delete -n {vault4} -g {rg} -y')
-
-    self.cmd('backup vault list', checks=[
-        self.check("length([?resourceGroup == '{rg}'])", number_of_test_vaults - 1),
-        self.check("length([?name == '{vault1}'])", 1),
-        self.check("length([?name == '{vault2}'])", 1),
-        self.check("length([?name == '{vault3}'])", 1)
-    ])
-
-
-def test_backup_container(self, resource_group, vault_name, vm1, vm2):
-
-    self.kwargs.update({
-        'vault': vault_name,
-        'vm1': vm1,
-        'vm2': vm2
-    })
-
-    container_json = self.cmd('backup container show -n {vm1} -v {vault} -g {rg}', checks=[
-        self.check('properties.friendlyName', '{vm1}'),
-        self.check('properties.healthStatus', 'Healthy'),
-        self.check('properties.registrationStatus', 'Registered'),
-        self.check('properties.resourceGroup', '{rg}'),
-        self.check('resourceGroup', '{rg}')
-    ]).get_output_in_json()
-
-    self.kwargs['container_name'] = container_json['name']
-
-    self.cmd('backup container show -n {container_name} -v {vault} -g {rg}', checks=[
-        self.check('properties.friendlyName', '{vm1}'),
-        self.check('properties.healthStatus', 'Healthy'),
-        self.check('properties.registrationStatus', 'Registered'),
-        self.check('properties.resourceGroup', '{rg}'),
-        self.check('name', '{container_name}'),
-        self.check('resourceGroup', '{rg}')
-    ]).get_output_in_json()
-
-    vm1_json = self.cmd('vm show -n {vm1} -g {rg}').get_output_in_json()
-
-    self.assertIn(vault_name.lower(), container_json['id'].lower())
-    self.assertIn(vm1.lower(), container_json['name'].lower())
-    self.assertIn(vm1.lower(), container_json['properties']['virtualMachineId'].lower())
-    self.assertEqual(container_json['properties']['virtualMachineVersion'], _get_vm_version(vm1_json['type']))
-
-    self.cmd('backup container list -v {vault} -g {rg}', checks=[
-        self.check("length(@)", 2),
-        self.check("length([?properties.friendlyName == '{vm1}'])", 1),
-        self.check("length([?properties.friendlyName == '{vm2}'])", 1)])
-
-
 def test_backup_wl_container(self, container_name1, container_name2, resource_group, vault_name, workload_type, subscription, id):
 
     self.kwargs.update({
@@ -204,7 +61,7 @@ def test_backup_wl_container(self, container_name1, container_name2, resource_gr
     self.assertIn(container_name1.lower(), container_json['name'].lower())
 
     self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
-        self.check("length(@)", 1),
+        self.check("length(@)", 1 if workload_type == 'MSSQL' else 3),
         self.check("length([?properties.friendlyName == '{fname}'])", 1)])
 
     self.cmd('backup container re-register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -y -n{name}')
@@ -218,149 +75,7 @@ def test_backup_wl_container(self, container_name1, container_name2, resource_gr
         self.check("length([?name == '{name}'])", 0)])
 
 
-def test_backup_policy(self, resource_group, vault_name, policy1, policy2, vm1, vm2):
-
-    self.kwargs.update({
-        'policy1': policy1,
-        'policy2': policy2,
-        'policy3': self.create_random_name('clitest-policy', 24),
-        'default': 'DefaultPolicy',
-        'vault': vault_name,
-        'vm1': vm1,
-        'vm2': vm2
-    })
-
-    self.kwargs['policy1_json'] = self.cmd('backup policy show -g {rg} -v {vault} -n {policy1}', checks=[
-        self.check('name', '{policy1}'),
-        self.check('resourceGroup', '{rg}')
-    ]).get_output_in_json()
-
-    self.cmd('backup policy list -g {rg} -v {vault}', checks=[
-        self.check("length(@)", 4),
-        self.check("length([?name == '{default}'])", 1),
-        self.check("length([?name == '{policy1}'])", 1),
-        self.check("length([?name == '{policy2}'])", 1)
-    ])
-
-    self.kwargs['instantRpRetentionRangeInDays'] = 2
-    self.kwargs['policy1_json']['name'] = self.kwargs['policy3']
-    self.kwargs['policy1_json']['properties']['instantRpRetentionRangeInDays'] = 2
-    self.kwargs['policy1_json'] = json.dumps(self.kwargs['policy1_json'])
-
-    self.cmd("backup policy set -g {rg} -v {vault} --policy '{policy1_json}'", checks=[
-        self.check('name', '{policy3}'),
-        self.check('resourceGroup', '{rg}')
-    ])
-
-    self.kwargs['policy1_json'] = self.cmd('backup policy show -g {rg} -v {vault} -n {policy1}', checks=[
-        self.check('name', '{policy1}'),
-        self.check('resourceGroup', '{rg}'),
-        self.check('properties.instantRpRetentionRangeInDays', '{instantRpRetentionRangeInDays}')
-    ]).get_output_in_json()
-
-    self.cmd('backup policy list-associated-items -g {rg} -v {vault} -n {default}', checks=[
-        self.check("length(@)", 2),
-        self.check("length([?properties.friendlyName == '{}'])".format(vm1), 1),
-        self.check("length([?properties.friendlyName == '{}'])".format(vm2), 1)
-    ])
-
-    self.cmd('backup policy list -g {rg} -v {vault}', checks=[
-        self.check("length(@)", 5),
-        self.check("length([?name == '{default}'])", 1),
-        self.check("length([?name == '{policy1}'])", 1),
-        self.check("length([?name == '{policy2}'])", 1),
-        self.check("length([?name == '{policy3}'])", 1)
-    ])
-
-    self.cmd('backup policy delete -g {rg} -v {vault} -n {policy3}')
-
-    self.cmd('backup policy list -g {rg} -v {vault}', checks=[
-        self.check("length(@)", 4),
-        self.check("length([?name == '{default}'])", 1),
-        self.check("length([?name == '{policy1}'])", 1),
-        self.check("length([?name == '{policy2}'])", 1)
-    ])
-
-
-def test_backup_item(self, resource_group, vault_name, vm1, vm2, policy_name):
-
-    self.kwargs.update({
-        'vault': vault_name,
-        'vm1': vm1,
-        'vm2': vm2,
-        'policy': policy_name,
-        'default': 'DefaultPolicy'
-    })
-    self.kwargs['container1'] = self.cmd('backup container show -n {vm1} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
-    self.kwargs['container2'] = self.cmd('backup container show -n {vm2} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
-
-    item1_json = self.cmd('backup item show -g {rg} -v {vault} -c {container1} -n {vm1}', checks=[
-        self.check('properties.friendlyName', '{vm1}'),
-        self.check('properties.healthStatus', 'Passed'),
-        self.check('properties.protectionState', 'IRPending'),
-        self.check('properties.protectionStatus', 'Healthy'),
-        self.check('resourceGroup', '{rg}')
-    ]).get_output_in_json()
-
-    self.assertIn(vault_name.lower(), item1_json['id'].lower())
-    self.assertIn(vm1.lower(), item1_json['name'].lower())
-    self.assertIn(vm1.lower(), item1_json['properties']['sourceResourceId'].lower())
-    self.assertIn(vm1.lower(), item1_json['properties']['virtualMachineId'].lower())
-    self.assertIn(self.kwargs['default'].lower(), item1_json['properties']['policyId'].lower())
-
-    self.kwargs['container1_fullname'] = self.cmd('backup container show -n {vm1} -v {vault} -g {rg} --query name').get_output_in_json()
-
-    self.cmd('backup item show -g {rg} -v {vault} -c {container1_fullname} -n {vm1}', checks=[
-        self.check('properties.friendlyName', '{vm1}'),
-        self.check('properties.healthStatus', 'Passed'),
-        self.check('properties.protectionState', 'IRPending'),
-        self.check('properties.protectionStatus', 'Healthy'),
-        self.check('resourceGroup', '{rg}')
-    ])
-
-    self.kwargs['item1_fullname'] = item1_json['name']
-
-    self.cmd('backup item show -g {rg} -v {vault} -c {container1_fullname} -n {item1_fullname}', checks=[
-        self.check('properties.friendlyName', '{vm1}'),
-        self.check('properties.healthStatus', 'Passed'),
-        self.check('properties.protectionState', 'IRPending'),
-        self.check('properties.protectionStatus', 'Healthy'),
-        self.check('resourceGroup', '{rg}')
-    ])
-
-    self.cmd('backup item list -g {rg} -v {vault} -c {container1}', checks=[
-        self.check("length(@)", 1),
-        self.check("length([?properties.friendlyName == '{vm1}'])", 1)
-    ])
-
-    self.cmd('backup item list -g {rg} -v {vault} -c {container1_fullname}', checks=[
-        self.check("length(@)", 1),
-        self.check("length([?properties.friendlyName == '{vm1}'])", 1)
-    ])
-
-    self.cmd('backup item list -g {rg} -v {vault} -c {container2}', checks=[
-        self.check("length(@)", 1),
-        self.check("length([?properties.friendlyName == '{vm2}'])", 1)
-    ])
-
-    self.cmd('backup item list -g {rg} -v {vault}', checks=[
-        self.check("length(@)", 2),
-        self.check("length([?properties.friendlyName == '{vm1}'])", 1),
-        self.check("length([?properties.friendlyName == '{vm2}'])", 1)
-    ])
-
-    self.cmd('backup item set-policy -g {rg} -v {vault} -c {container1} -n {vm1} -p {policy}', checks=[
-        self.check("properties.entityFriendlyName", '{vm1}'),
-        self.check("properties.operation", "ConfigureBackup"),
-        self.check("properties.status", "Completed"),
-        self.check("resourceGroup", '{rg}')
-    ])
-
-    item1_json = self.cmd('backup item show -g {rg} -v {vault} -c {container1} -n {vm1}').get_output_in_json()
-    self.assertIn(policy_name.lower(), item1_json['properties']['policyId'].lower())
-
-
-def test_backup_wl_item(self, container_name1, container_name2, resource_group, vault_name, policy_name, workload_type, subscription, item, id, type, item_id):
+def test_backup_wl_policy(self, container_name1, container_name2, resource_group, vault_name, policy_name, workload_type, subscription, item, id, item_type, item_id, policy_new):
 
     self.kwargs.update({
         'vault': vault_name,
@@ -374,7 +89,62 @@ def test_backup_wl_item(self, container_name1, container_name2, resource_group, 
         'item': item,
         'id': id,
         'item_id': item_id,
-        'pit': type
+        'pit': item_type,
+        'policy_new': self.create_random_name('clitest-policy', 24)
+    })
+
+    self.cmd('account set -s {sub}')
+
+    self.kwargs['policy1_json'] = self.cmd('backup policy show -g {rg} -v {vault} -n {policy} -bmt AzureWorkload', checks=[
+        self.check('[].name', '[\'{policy}\']'),
+        self.check('[].resourceGroup', '[\'{rg}\']')
+    ]).get_output_in_json()[0]
+
+    self.kwargs['policy_json'] = json.dumps(self.kwargs['policy1_json'], separators=(',', ':')).replace('\'', '\\\'').replace('"', '\\"')
+
+    self.cmd("backup policy new -g {rg} -v {vault} --policy {policy_json} -bmt AzureWorkload -wt {wt} -n {policy_new}", checks=[
+        self.check('name', '{policy_new}'),
+        self.check('resourceGroup', '{rg}')
+    ])
+
+    self.cmd('backup policy list -g {rg} -v {vault}', checks=[
+        self.check("length(@)", 8 if workload_type == 'MSSQL' else 5),
+        self.check("length([?name == '{default}'])", 1),
+        self.check("length([?name == '{policy}'])", 1),
+        self.check("length([?name == '{policy_new}'])", 1)
+    ])
+
+    self.kwargs['policy1_json']['properties']['settings']['isCompression'] = 'true'
+    self.kwargs['policy1_json']['properties']['settings']['issqlcompression'] = 'true'
+    self.kwargs['policy1_json'] = json.dumps(self.kwargs['policy1_json'], separators=(',', ':')).replace('\'', '\\\'').replace('"', '\\"')
+
+    if workload_type == 'MSSQL':
+        self.cmd("backup policy set -g {rg} -v {vault} --policy {policy1_json} -n {policy_new}", checks=[
+            self.check('name', '{policy_new}'),
+            self.check('resourceGroup', '{rg}')
+        ])
+
+    self.cmd('backup policy show -g {rg} -v {vault} -n {policy_new} -bmt AzureWorkload', checks=[
+        self.check('[].name', '[\'{policy_new}\']'),
+        self.check('[].resourceGroup', '[\'{rg}\']')
+    ])
+
+
+def test_backup_wl_item(self, container_name1, container_name2, resource_group, vault_name, policy_name, workload_type, subscription, item, id, item_type, item_id):
+
+    self.kwargs.update({
+        'vault': vault_name,
+        'name': container_name1,
+        'fname': container_name2,
+        'policy': policy_name,
+        'wt': workload_type,
+        'sub': subscription,
+        'default': 'HourlyLogBackup',
+        'rg': resource_group,
+        'item': item,
+        'id': id,
+        'item_id': item_id,
+        'pit': item_type
     })
 
     self.cmd('account set -s {sub}')
@@ -439,10 +209,10 @@ def test_backup_wl_item(self, container_name1, container_name2, resource_group, 
     ])
 
     self.cmd('backup item set-policy -g {rg} -v {vault} -c {container1} -n {item1_fullname} -p {policy} -bmt AzureWorkload', checks=[
-    self.check("properties.entityFriendlyName", '{item}'),
-    self.check("properties.operation", "ConfigureBackup"),
-    self.check("properties.status", "Completed"),
-    self.check("resourceGroup", '{rg}')
+        self.check("properties.entityFriendlyName", '{item}'),
+        self.check("properties.operation", "ConfigureBackup"),
+        self.check("properties.status", "Completed"),
+        self.check("resourceGroup", '{rg}')
     ])
 
     item1_json = self.cmd('backup item show -g {rg} -v {vault} -c {container1} -n {item} -wt {wt}').get_output_in_json()
@@ -456,34 +226,7 @@ def test_backup_wl_item(self, container_name1, container_name2, resource_group, 
         self.check("length([?name == '{name}'])", 0)])
 
 
-def test_backup_rp(self, resource_group, vault_name, vm_name):
-
-    self.kwargs.update({
-        'vault': vault_name,
-        'vm': vm_name
-    })
-    rp_names = self.cmd('backup recoverypoint list -g {rg} -v {vault} -c {vm} -i {vm} --query [].name', checks=[
-        self.check("length(@)", 2)
-    ]).get_output_in_json()
-
-    self.kwargs['rp1'] = rp_names[0]
-    rp1_json = self.cmd('backup recoverypoint show -g {rg} -v {vault} -c {vm} -i {vm} -n {rp1}', checks=[
-        self.check("name", '{rp1}'),
-        self.check("resourceGroup", '{rg}')
-    ]).get_output_in_json()
-    self.assertIn(vault_name.lower(), rp1_json['id'].lower())
-    self.assertIn(vm_name.lower(), rp1_json['id'].lower())
-
-    self.kwargs['rp2'] = rp_names[1]
-    rp2_json = self.cmd('backup recoverypoint show -g {rg} -v {vault} -c {vm} -i {vm} -n {rp2}', checks=[
-        self.check("name", '{rp2}'),
-        self.check("resourceGroup", '{rg}')
-    ]).get_output_in_json()
-    self.assertIn(vault_name.lower(), rp2_json['id'].lower())
-    self.assertIn(vm_name.lower(), rp2_json['id'].lower())
-
-
-def test_backup_wl_rp(self, container_name, resource_group, vault_name, item_name, workload_type, subscription, type, container_name2, policy_name, id, item_id):
+def test_backup_wl_rp(self, container_name, resource_group, vault_name, item_name, workload_type, subscription, item_type, container_name2, policy_name, id, item_id):
 
     self.kwargs.update({
         'vault': vault_name,
@@ -494,7 +237,7 @@ def test_backup_wl_rp(self, container_name, resource_group, vault_name, item_nam
         'wt': workload_type,
         'sub': subscription,
         'item': item_name,
-        'pit': type,
+        'pit': item_type,
         'item_id': item_id,
         'id': id
     })
@@ -512,7 +255,7 @@ def test_backup_wl_rp(self, container_name, resource_group, vault_name, item_nam
 
     self.cmd('backup recoverypoint list -g {rg} -v {vault} -c {name} -i {item} -wt {wt} --query [].name', checks=[
         self.check("length(@)", 1)
-    ]).get_output_in_json()
+    ])
 
     rp1_json = self.cmd('backup recoverypoint logchain show -g {rg} -v {vault} -c {name} -i {item} -wt {wt}', checks=[
         self.check('[].resourceGroup', '[\'{rg}\']')
@@ -534,144 +277,155 @@ def test_backup_wl_rp(self, container_name, resource_group, vault_name, item_nam
         self.check("length([?name == '{name}'])", 0)])
 
 
-def test_backup_protection(self, resource_group, vault_name, vm_name):
+def test_backup_wl_protection(self, container_name1, container_name2, resource_group, vault_name, policy_name, workload_type, subscription, item, id, item_type, item_id, backup_entity_friendly_name):
 
     self.kwargs.update({
         'vault': vault_name,
-        'vm': vm_name
+        'name': container_name1,
+        'fname': container_name2,
+        'policy': policy_name,
+        'wt': workload_type,
+        'sub': subscription,
+        'default': 'HourlyLogBackup',
+        'rg': resource_group,
+        'item': item,
+        'id': id,
+        'item_id': item_id,
+        'pit': item_type,
+        'entityFriendlyName': backup_entity_friendly_name
     })
 
-    self.kwargs['vm_id'] = self.cmd('vm show -g {rg} -n {vm} --query id').get_output_in_json()
+    self.cmd('account set -s {sub}')
 
-    protection_check = self.cmd('backup protection check-vm --vm-id {vm_id}').output
-    self.assertTrue(protection_check == '')
+    self.cmd('backup container register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -id {id}')
 
-    self.cmd('backup protection enable-for-vm -g {rg} -v {vault} --vm {vm} -p DefaultPolicy', checks=[
-        self.check("properties.entityFriendlyName", '{vm}'),
+    self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
+        self.check("length([?name == '{name}'])", 1)])
+
+    self.kwargs['protectable_item'] = json.dumps(self.cmd('backup protectable-item show -v {vault} -g {rg} -pit {pit} -s {fname} -n {item} -wt {wt}').get_output_in_json(), separators=(',', ':')).replace('"', '\\"')
+
+    self.cmd('backup protection enable-for-AzureWL -v {vault} -g {rg} -p {policy} -pi {protectable_item}', checks=[
+        self.check("properties.entityFriendlyName", '{item}'),
         self.check("properties.operation", "ConfigureBackup"),
         self.check("properties.status", "Completed"),
         self.check("resourceGroup", '{rg}')
     ])
 
-    vault_id = self.cmd('backup vault show -g {rg} -n {vault} --query id').get_output_in_json()
+    self.kwargs['container1'] = self.cmd('backup container show -n {name} -v {vault} -g {rg} -bmt AzureWorkload --query name').get_output_in_json()
 
-    vault_id_check = self.cmd('backup protection check-vm --vm-id {vm_id}').get_output_in_json()
-    self.assertIsNotNone(vault_id_check)
-    self.assertTrue(vault_id.lower() == vault_id_check.lower())
+    self.kwargs['backup_job'] = self.cmd('backup protection backup-now -v {vault} -g {rg} -i {item_id} -bt Full -rt 1-7-2019 -ec false', checks=[
+        self.check("properties.entityFriendlyName", '{entityFriendlyName}'),
+        self.check("properties.operation", "Backup"),
+        self.check("properties.status", "InProgress"),
+        self.check("resourceGroup", '{rg}')
+    ]).get_output_in_json()
 
-    self.cmd('backup protection disable -g {rg} -v {vault} -c {vm} -i {vm} --yes', checks=[
-        self.check("properties.entityFriendlyName", '{vm}'),
+    self.kwargs['job'] = self.kwargs['backup_job']['name']
+
+    self.cmd('backup job wait -v {vault} -g {rg} -n {job}')
+
+    self.cmd('backup item show -g {rg} -v {vault} -c {container1} -n {item} -bmt AzureWorkload -wt {wt}', checks=[
+        self.check('properties.friendlyName', '{item}'),
+        self.check('properties.protectedItemHealthStatus', 'Healthy'),
+        self.check('properties.protectionState', 'Protected'),
+        self.check('properties.protectionStatus', 'Healthy'),
+        self.check('resourceGroup', '{rg}')
+    ])
+
+    self.cmd('backup protection disable -v {vault} -g {rg} -i {item_id} -y', checks=[
+        self.check("properties.entityFriendlyName", '{item}'),
         self.check("properties.operation", "DisableBackup"),
         self.check("properties.status", "Completed"),
         self.check("resourceGroup", '{rg}')
     ])
 
-    self.cmd('backup item show -g {rg} -v {vault} -c {vm} -n {vm}', checks=[
-        self.check("properties.friendlyName", '{vm}'),
+    self.cmd('backup item show -g {rg} -v {vault} -c {container1} -n {item} -bmt AzureWorkload -wt {wt}', checks=[
+        self.check("properties.friendlyName", '{item}'),
         self.check("properties.protectionState", "ProtectionStopped"),
         self.check("resourceGroup", '{rg}')
     ])
 
-    self.cmd('backup protection disable -g {rg} -v {vault} -c {vm} -i {vm} --delete-backup-data true --yes', checks=[
-        self.check("properties.entityFriendlyName", '{vm}'),
+    self.cmd('backup protection disable -v {vault} -g {rg} -i {item_id} -y --delete-backup-data true', checks=[
+        self.check("properties.entityFriendlyName", '{item}'),
         self.check("properties.operation", "DeleteBackupData"),
         self.check("properties.status", "Completed"),
         self.check("resourceGroup", '{rg}')
     ])
 
-    self.cmd('backup container list -v {vault} -g {rg}',
-                checks=self.check("length(@)", 0))
+    self.cmd('backup container unregister -v {vault} -g {rg} -n {name} -y')
 
-    protection_check = self.cmd('backup protection check-vm --vm-id {vm_id}').output
-    self.assertTrue(protection_check == '')
+    self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
+        self.check("length([?name == '{name}'])", 0)])
 
 
-def test_backup_restore(self, resource_group, vault_name, vm_name, storage_account):
+def test_backup_wl_auto_protection(self, container_name1, container_name2, resource_group, vault_name, policy_name, workload_type, subscription, item, id, item_type, item_id, backup_entity_friendly_name):
 
     self.kwargs.update({
         'vault': vault_name,
-        'vm': vm_name
+        'name': container_name1,
+        'fname': container_name2,
+        'policy': policy_name,
+        'wt': workload_type,
+        'sub': subscription,
+        'default': 'HourlyLogBackup',
+        'rg': resource_group,
+        'item': item,
+        'id': id,
+        'item_id': item_id,
+        'pit': item_type,
+        'entityFriendlyName': backup_entity_friendly_name
     })
-    self.kwargs['rp'] = self.cmd('backup recoverypoint list -g {rg} -v {vault} -c {vm} -i {vm} --query [0].name').get_output_in_json()
 
-    # Original Storage Account Restore Fails
-    self.cmd('backup restore restore-disks -g {rg} -v {vault} -c {vm} -i {vm} -r {rp} --storage-account {sa} --restore-to-staging-storage-account false', expect_failure=True)
+    self.cmd('account set -s {sub}')
 
-    # Trigger Restore
-    trigger_restore_job_json = self.cmd('backup restore restore-disks -g {rg} -v {vault} -c {vm} -i {vm} -r {rp} --storage-account {sa} --restore-to-staging-storage-account', checks=[
-        self.check("properties.entityFriendlyName", '{vm}'),
-        self.check("properties.operation", "Restore"),
-        self.check("properties.status", "InProgress"),
-        self.check("resourceGroup", '{rg}')
-    ]).get_output_in_json()
-    self.kwargs['job'] = trigger_restore_job_json['name']
-    self.cmd('backup job wait -g {rg} -v {vault} -n {job}')
+    self.cmd('backup container register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -id {id}')
 
-    trigger_restore_job_details = self.cmd('backup job show -g {rg} -v {vault} -n {job}', checks=[
-        self.check("properties.entityFriendlyName", '{vm}'),
-        self.check("properties.operation", "Restore"),
+    self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
+        self.check("length([?name == '{name}'])", 1)])
+
+    self.kwargs['protectable_item'] = json.dumps(self.cmd('backup protectable-item show -v {vault} -g {rg} -pit {pit} -s {fname} -n {item} -wt {wt}').get_output_in_json(), separators=(',', ':')).replace('"', '\\"')
+
+    self.cmd('backup protection auto-enable-for-AzureWL -v {vault} -g {rg} -p {policy} -pi {protectable_item}', checks=[
+        self.check("properties.entityFriendlyName", '{item}'),
+        self.check("properties.operation", "ConfigureBackup"),
         self.check("properties.status", "Completed"),
-        self.check("resourceGroup", '{rg}')
-    ]).get_output_in_json()
-
-    property_bag = trigger_restore_job_details['properties']['extendedInfo']['propertyBag']
-    self.assertEqual(property_bag['Target Storage Account Name'], storage_account)
-
-    self.kwargs['container'] = property_bag['Config Blob Container Name']
-    self.kwargs['blob'] = property_bag['Config Blob Name']
-
-    self.cmd('storage blob exists --account-name {sa} -c {container} -n {blob}',
-                checks=self.check("exists", True))
-
-
-def test_backup_job(self, resource_group, vault_name, vm_name, storage_account):
-
-    self.kwargs.update({
-        'vault': vault_name,
-        'vm': vm_name
-    })
-    self.kwargs['rp'] = self.cmd('backup recoverypoint list -g {rg} -v {vault} -c {vm} -i {vm} --query [0].name').get_output_in_json()
-    self.kwargs['job'] = self.cmd('backup restore restore-disks -g {rg} -v {vault} -c {vm} -i {vm} -r {rp} --storage-account {sa} --query name --restore-to-staging-storage-account').get_output_in_json()
-
-    self.cmd('backup job show -g {rg} -v {vault} -n {job}', checks=[
-        self.check("name", '{job}'),
-        self.check("properties.entityFriendlyName", '{vm}'),
-        self.check("properties.operation", "Restore"),
-        self.check("properties.status", "InProgress"),
         self.check("resourceGroup", '{rg}')
     ])
 
-    self.cmd('backup job list -g {rg} -v {vault}',
-                checks=self.check("length([?name == '{job}'])", 1))
+    self.kwargs['container1'] = self.cmd('backup container show -n {name} -v {vault} -g {rg} -bmt AzureWorkload --query name').get_output_in_json()
 
-    self.cmd('backup job list -g {rg} -v {vault} --status InProgress',
-                checks=self.check("length([?name == '{job}'])", 1))
+    self.cmd('backup container unregister -v {vault} -g {rg} -n {name} -y')
 
-    self.cmd('backup job list -g {rg} -v {vault} --operation Restore',
-                checks=self.check("length([?name == '{job}'])", 1))
-
-    self.cmd('backup job list -g {rg} -v {vault} --operation Restore --status InProgress',
-                checks=self.check("length([?name == '{job}'])", 1))
-
-    self.cmd('backup job stop -g {rg} -v {vault} -n {job}')
+    self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
+        self.check("length([?name == '{name}'])", 0)])
 
 
-def test_backup_protectable_item(self, container_name1='shrac3', container_name2='shrac2', resource_group='shracrg', vault_name='shracsql', policy_name='HourlyLogBackup'):
+def test_backup_wl_protectable_item(self, container_name1, container_name2, resource_group, vault_name, policy_name, workload_type, subscription, item, id, item_type, item_id):
 
     self.kwargs.update({
         'vault': vault_name,
-        'name1': container_name1,
-        'name2': container_name2,
+        'name': container_name1,
+        'fname': container_name2,
         'policy': policy_name,
+        'wt': workload_type,
+        'sub': subscription,
         'default': 'HourlyLogBackup',
         'rg': resource_group,
-        'item1': "shracsqldb101",
-        'item2': "dogfooddb103",
-        'name': 'mssqlserer'
+        'item': item,
+        'id': id,
+        'item_id': item_id,
+        'pit': item_type
     })
 
-    # self.kwargs['container1'] = self.cmd('backup container show -n {name1} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
-    # self.kwargs['container2'] = self.cmd('backup container show -n {name2} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
+    self.cmd('account set -s {sub}')
+
+    self.cmd('backup container register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -id {id}')
+
+    self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
+        self.check("length([?name == '{name}'])", 1)])
+
+    self.kwargs['container1'] = self.cmd('backup container show -n {name1} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
+    self.kwargs['container2'] = self.cmd('backup container show -n {name2} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
 
     self.kwargs['name'] = self.cmd('backup protectable-item list -g {rg} -v {vault} --query [0].name').get_output_in_json()
 
@@ -683,51 +437,7 @@ def test_backup_protectable_item(self, container_name1='shrac3', container_name2
         self.check('resourceGroup', '{rg}')
     ]).get_output_in_json()
 
-    self.assertIn(vault_name.lower(), item1_json['id'].lower())
-    self.assertIn(container_name1.lower(), item1_json['properties']['containerName'].lower())
-    self.assertIn(container_name1.lower(), item1_json['properties']['sourceResourceId'].lower())
-    self.assertIn(self.kwargs['default'].lower(), item1_json['properties']['policyId'].lower())
+    self.cmd('backup container unregister -v {vault} -g {rg} -n {name} -y')
 
-    self.kwargs['container1_fullname'] = self.cmd('backup container show -n {name1} -v {vault} -g {rg} --query name').get_output_in_json()
-
-    self.cmd('backup item show -g {rg} -v {vault} -c {container1_fullname} -n {item1}', checks=[
-        self.check('properties.friendlyName', '{item1}'),
-        self.check('properties.protectedItemHealthStatus', 'NotReachable'),
-        self.check('properties.protectionState', 'IRPending'),
-        self.check('properties.protectionStatus', 'Healthy'),
-        self.check('resourceGroup', '{rg}')
-    ])
-
-    self.kwargs['item1_fullname'] = item1_json['name']
-
-    self.cmd('backup item show -g {rg} -v {vault} -c {container1_fullname} -n {item1_fullname}', checks=[
-        self.check('properties.friendlyName', '{item1}'),
-        self.check('properties.protectedItemHealthStatus', 'NotReachable'),
-        self.check('properties.protectionState', 'IRPending'),
-        self.check('properties.protectionStatus', 'Healthy'),
-        self.check('resourceGroup', '{rg}')
-    ])
-
-    self.cmd('backup item list -g {rg} -v {vault} -c {container1}', checks=[
-        #self.check("length(@)", 1),
-        self.check("length([?properties.friendlyName == '{item1}'])", 1)
-    ])
-
-    self.cmd('backup item list -g {rg} -v {vault} -c {container1_fullname}', checks=[
-        #self.check("length(@)", 1),
-        self.check("length([?properties.friendlyName == '{item1}'])", 1)
-    ])
-
-    self.cmd('backup item list -g {rg} -v {vault} -c {container2}', checks=[
-        self.check("length(@)", 1),
-        self.check("length([?properties.friendlyName == '{item2}'])", 1)
-    ])
-
-    self.cmd('backup item list -g {rg} -v {vault}', checks=[
-        #self.check("length(@)", 2),
-        self.check("length([?properties.friendlyName == '{item1}'])", 1),
-        self.check("length([?properties.friendlyName == '{item2}'])", 1)
-    ])
-
-    item1_json = self.cmd('backup item show -g {rg} -v {vault} -c {container1} -n {item1}').get_output_in_json()
-    self.assertIn(policy_name.lower(), item1_json['properties']['policyId'].lower())
+    self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
+        self.check("length([?name == '{name}'])", 0)])

@@ -96,7 +96,7 @@ def load_arguments(self, _):
     with self.argument_context('backup protectable-item show') as c:
         c.argument('name', item_name_type, options_list=['--name', '-n'], help='Name of the backed up protectable item. You can use the backup protectable-item list command to get the name of a backed up protectable item.')
         c.argument('server_name', options_list=['--server-name', '-s'])
-        c.argument('protectable_item_type', arg_type=get_enum_type(['SQLAG', 'SQLInstance', 'SQLDataBase', 'HANAInstance', 'HANADataBase']), options_list=['--protectable-item-type', '-pit'])
+        c.argument('protectable_item_type', arg_type=get_enum_type(['SQLAG', 'SQLInstance', 'SQLDatabase', 'HANAInstance', 'HANADatabase']), options_list=['--protectable-item-type', '-pit'])
 
     with self.argument_context('backup protectable-item') as c:
         c.argument('container_name', container_name_type)
@@ -142,8 +142,6 @@ def load_arguments(self, _):
         c.argument('name', rp_name_type, options_list=['--name', '-n'], help='Name of the recovery point. You can use the backup recovery point list command to get the name of a backed up item.')
 
     with self.argument_context('backup recoverypoint logchain show') as c:
-        c.argument('start_date', type=datetime_type, help='The start date of the range in UTC (d-m-Y).')
-        c.argument('end_date', type=datetime_type, help='The end date of the range in UTC (d-m-Y).')
         c.argument('workload_type', wl_type)
 
     # Protection
@@ -191,6 +189,9 @@ def load_arguments(self, _):
         c.argument('storage_account', help='Name or ID of the staging storage account. The VM configuration will be restored to this storage account. See the help for --restore-to-staging-storage-account parameter for more info.')
         c.argument('restore_to_staging_storage_account', arg_type=get_three_state_flag(), help='Use this flag when you want disks to be restored to the staging storage account using the --storage-account parameter. When not specified, disks will be restored to their original storage accounts. Default: false.')
 
+    with self.argument_context('backup restore restore-azureworkloads') as c:
+        c.argument('recovery_config', type=file_type, help='JSON encoded protectable item definition.', completer=FilesCompleter(), options_list=['--recovery-config', '-rc'])
+
     # Job
     with self.argument_context('backup job') as c:
         c.argument('vault_name', vault_name_type, id_part='name')
@@ -209,3 +210,13 @@ def load_arguments(self, _):
 
     with self.argument_context('backup job wait') as c:
         c.argument('timeout', type=int, help='Maximum time, in seconds, to wait before aborting.')
+
+    with self.argument_context('backup recoveryconfig') as c:
+        c.argument('vault_name', vault_name_type, id_part='name')
+        c.argument('restore_mode', arg_type=get_enum_type(['OriginalWorkloadRestore', 'AlternateWorkloadRestore']), options_list=['--restore-mode', '-m'])
+
+    with self.argument_context('backup recoveryconfig show') as c:
+        c.argument('item_name', item_name_type)
+        c.argument('rp_name', rp_name_type)
+        c.argument('target_item', type=file_type, help='JSON encoded protectable item definition.', completer=FilesCompleter(), options_list=['--target-item', '-ti'])
+        c.argument('log_point_in_time', type=datetime_type, options_list=['--log-point-in-time', '-lp'])

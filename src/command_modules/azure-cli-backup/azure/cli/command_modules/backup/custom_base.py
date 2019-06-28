@@ -85,7 +85,7 @@ def backup_now(cmd, client, resource_group_name, vault_name, item_name, retain_u
 
 def disable_protection(cmd, client, resource_group_name, vault_name, item_name, container_name=None,
                        container_type="AzureIaasVM", item_type="VM", delete_backup_data=False, **kwargs):
-    if (custom_help._is_id(item_name) and custom_help._is_wl_container(item_name)) or (container_name is not None and 
+    if (custom_help._is_id(item_name) and custom_help._is_wl_container(item_name)) or (container_name is not None and
                                                                                        custom_help._is_wl_container(item_name)):
         return custom_wl.disable_protection(cmd, client, resource_group_name, vault_name, container_name, item_name, delete_backup_data)
     else:
@@ -95,12 +95,12 @@ def disable_protection(cmd, client, resource_group_name, vault_name, item_name, 
 
 def update_policy_for_item(cmd, client, resource_group_name, vault_name, item_name, policy_name, item_type="VM",
                            container_type="AzureIaasVM", container_name=None):
-    if container_type != "AzureIaasVM" or (custom_help._is_wl_container(item_name) and (custom_help._is_id(item_name) or 
+    if container_type != "AzureIaasVM" or (custom_help._is_wl_container(item_name) and (custom_help._is_id(item_name) or
                                                                                         container_name is not None)):
-        return custom_wl.update_policy_for_item(cmd, client, resource_group_name, vault_name, container_name, 
+        return custom_wl.update_policy_for_item(cmd, client, resource_group_name, vault_name, container_name,
                                                 item_name, policy_name, container_type)
     else:
-        return custom.update_policy_for_item(cmd, client, resource_group_name, vault_name, container_name, 
+        return custom.update_policy_for_item(cmd, client, resource_group_name, vault_name, container_name,
                                              item_name, policy_name)
 
 
@@ -168,3 +168,19 @@ def auto_enable_for_azure_wl(cmd, client, resource_group_name, vault_name, polic
 
 def disable_auto_for_azure_wl(cmd, client, resource_group_name, vault_name, item_name):
     return custom_wl.disable_auto_for_azure_wl(cmd, client, resource_group_name, vault_name, item_name)
+
+
+def restore_disks(cmd, client, resource_group_name, vault_name, container_name, item_name, rp_name, storage_account,
+                  restore_to_staging_storage_account=None):
+    return custom.restore_disks(cmd, client, resource_group_name, vault_name, container_name, item_name, rp_name, storage_account,
+                                restore_to_staging_storage_account)
+
+
+def restore_azure_wl(cmd, client, resource_group_name, vault_name, recovery_config):
+    return custom_wl.restore_azure_wl(cmd, client, resource_group_name, vault_name, recovery_config)
+
+
+def show_recovery_config(cmd, client, resource_group_name, vault_name, restore_mode, item_name=None, rp_name=None, target_item=None,
+                         log_point_in_time=None):
+    return custom_wl.show_recovery_config(cmd, client, resource_group_name, vault_name, restore_mode, item_name, rp_name, target_item,
+                                          log_point_in_time)

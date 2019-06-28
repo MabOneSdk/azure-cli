@@ -84,9 +84,13 @@ def load_command_table(self, _):
         g.show_command('logchain show', 'list_recovery_points')
         g.command('list', 'list_recovery_points', table_transformer=transform_recovery_points_list)
 
-    with self.command_group('backup restore', backup_custom, client_factory=restores_cf) as g:
+    with self.command_group('backup restore', backup_custom_base, client_factory=restores_cf) as g:
         g.command('restore-disks', 'restore_disks')
+        g.command('restore-azureworkloads', 'restore_azure_wl')
 
     with self.command_group('backup restore files', backup_custom, client_factory=item_level_recovery_connections_cf) as g:
         g.command('mount-rp', 'restore_files_mount_rp')
         g.command('unmount-rp', 'restore_files_unmount_rp')
+
+    with self.command_group('backup recoveryconfig', backup_custom_base, client_factory=recovery_points_cf) as g:
+        g.show_command('show', 'show_recovery_config')

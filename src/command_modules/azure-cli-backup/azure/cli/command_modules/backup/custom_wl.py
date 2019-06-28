@@ -7,14 +7,12 @@ import azure.cli.command_modules.backup.custom_help as cust_help
 # pylint: disable=import-error
 
 from knack.log import get_logger
-
+from uuid import uuid4
 from importlib import import_module
 
-from uuid import uuid4
-
 from azure.mgmt.recoveryservicesbackup.models import AzureVMAppContainerProtectionContainer, ProtectionContainerResource, \
-    AzureVmWorkloadSQLDatabaseProtectedItem, ProtectedItemResource, AzureVmWorkloadSAPHanaDatabaseProtectedItem, \
-    AzureWorkloadBackupRequest, BackupRequestResource, AzureRecoveryServiceVaultProtectionIntent, ProtectionIntentResource
+    AzureWorkloadBackupRequest, ProtectedItemResource, AzureRecoveryServiceVaultProtectionIntent, \
+    RestoreRequestResource, BackupRequestResource, ProtectionIntentResource, AzureWorkloadRestoreRequest \
 
 from azure.cli.core.util import CLIError, sdk_no_wait
 from azure.cli.command_modules.backup._client_factory import (
@@ -32,6 +30,10 @@ password_length = 15
 # Mapping of workload type
 workload_type_map = {'MSSQL': 'SQLDataBase',
                      'SAPHANA': 'SAPHanaDatabase'}
+
+# Mapping of module name
+module_map = {'sqldatabase': 'sql_database',
+              'saphanadatabase': 'sap_hana_database'}
 
 
 def show_wl_policy(client, resource_group_name, vault_name, name):
@@ -223,7 +225,12 @@ def update_policy_for_item(cmd, client, resource_group_name, vault_name, contain
             Use the relevant get-default policy command and use it to update the policy for the workload.
             """)
 
-    properties = AzureVmWorkloadSQLDatabaseProtectedItem(policy_id=policy.id)
+    # Dynamically instantiating class based on item type
+    backup_item_type = item_uri.split(';')[0]
+    class_ = getattr(import_module("azure.mgmt.recoveryservicesbackup.models.azure_vm_workload_"+module_map[backup_item_type.lower()]+"_protected_item"),
+                     "AzureVmWorkload"+backup_item_type+"ProtectedItem")
+
+    properties = class_(policy_id=policy.id)
     param = ProtectedItemResource(properties=properties)
 
     # Update policy
@@ -260,16 +267,16 @@ def set_policy(client, resource_group_name, vault_name, policy, policy_name):
             """)
 
     policy_object = cust_help._get_policy_from_json(client, policy)
-    #retention_range_in_days = policy_object.properties.instant_rp_retention_range_in_days
-    #schedule_run_frequency = policy_object.properties.schedule_policy.schedule_run_frequency
+    # retention_range_in_days = policy_object.properties.instant_rp_retention_range_in_days
+    # schedule_run_frequency = policy_object.properties.schedule_policy.schedule_run_frequency
 
     # Validating range of days input
-    #if schedule_run_frequency == 'Weekly' and retention_range_in_days != 5:
+    # if schedule_run_frequency == 'Weekly' and retention_range_in_days != 5:
     #    raise CLIError(
     #        """
     #        Retention policy range must be equal to 5.
     #        """)
-    #if schedule_run_frequency == 'Daily' and (retention_range_in_days > 5 or retention_range_in_days < 1):
+    # if schedule_run_frequency == 'Daily' and (retention_range_in_days > 5 or retention_range_in_days < 1):
     #    raise CLIError(
     #        """
     #        Retention policy range must be between 1 to 5.
@@ -282,11 +289,19 @@ def show_protectable_item(cmd, client, resource_group_name, vault_name, name, se
                           workload_type, container_type="AzureWorkload"):
     items = list_protectable_items(cmd, client, resource_group_name, vault_name, workload_type, None, container_type)
 
+    # Mapping of protectable item type
+    protectable_item_type_map = {'SQLDatabase': 'SQLDataBase',
+                                 'HANADatabase': 'SAPHanaDatabase',
+                                 'HANAInstance': 'SAPHanaSystem',
+                                 'SQLInstance': 'SQLInstance',
+                                 'SQLAG': 'SQLAG'}
+    protectable_item_type = protectable_item_type_map[protectable_item_type]
+
     # Name filter
     if cust_help._is_native_name(name):
-        filtered_items = [item for item in items if item.name == name]
+        filtered_items = [item for item in items if item.name.lower() == name.lower()]
     else:
-        filtered_items = [item for item in items if item.properties.friendly_name == name]
+        filtered_items = [item for item in items if item.properties.friendly_name.lower() == name.lower()]
 
     # Server Name filter
     filtered_items = [item for item in filtered_items if item.properties.server_name == server_name]
@@ -372,15 +387,11 @@ def enable_protection_for_azure_wl(cmd, client, resource_group_name, vault_name,
     policy_object = show_wl_policy(protection_policies_cf(cmd.cli_ctx), resource_group_name, vault_name, policy_name)[0]
     policy_id = policy_object.id
 
-    #class_ = getattr(import_module("azure.mgmt.recoveryservicesbackup.models"), "AzureVmWorkload"+protectable_item_type+"ProtectedItem")
+    # Dynamically instantiating class based on item type
+    class_ = getattr(import_module("azure.mgmt.recoveryservicesbackup.models.azure_vm_workload_"+module_map[protectable_item_type.lower()]+"_protected_item"),
+                     "AzureVmWorkload"+protectable_item_type+"ProtectedItem")
 
-    properties = AzureVmWorkloadSQLDatabaseProtectedItem(backup_management_type='AzureWorkload',
-                                                         policy_id=policy_id, workload_type=protectable_item_type)
-
-    if protectable_item_type == 'SAPHanaDatabase':
-        properties = AzureVmWorkloadSAPHanaDatabaseProtectedItem(backup_management_type='AzureWorkload',
-                                                                 policy_id=policy_id, workload_type=protectable_item_type)
-
+    properties = class_(backup_management_type='AzureWorkload', policy_id=policy_id, workload_type=protectable_item_type)
     param = ProtectionContainerResource(properties=properties)
 
     result = sdk_no_wait(True, client.create_or_update,
@@ -470,7 +481,11 @@ def disable_protection(cmd, client, resource_group_name, vault_name, container_n
                              vault_name, resource_group_name, fabric_name, container_uri, item_uri)
         return cust_help._track_backup_job(cmd.cli_ctx, result, vault_name, resource_group_name)
 
-    properties = AzureVmWorkloadSQLDatabaseProtectedItem(protection_state='ProtectionStopped', policy_id='')
+    class_ = getattr(import_module("azure.mgmt.recoveryservicesbackup.models.azure_vm_workload_"+module_map[backup_item_type.lower()]+"_protected_item"),
+                     "AzureVmWorkload"+backup_item_type+"ProtectedItem")
+
+    # Dynamically instantiating class based on item type
+    properties = class_(protection_state='ProtectionStopped', policy_id='')
     param = ProtectedItemResource(properties=properties)
 
     result = sdk_no_wait(True, client.create_or_update,
@@ -482,7 +497,7 @@ def auto_enable_for_azure_wl(cmd, client, resource_group_name, vault_name, polic
     protectable_item_object = cust_help._get_protectable_item_from_json(client, protectable_item)
     item_id = protectable_item_object.id
     protectable_item_type = protectable_item_object.properties.protectable_item_type
-    if protectable_item_type != 'SQLInstance':
+    if protectable_item_type.lower() != 'sqlinstance':
         raise CLIError(
             """
             Protectable Item can only be of type SQLInstance.
@@ -516,3 +531,18 @@ def disable_auto_for_azure_wl(cmd, client, resource_group_name, vault_name, item
     intent_object_name = str(uuid4())
 
     return client.delete(vault_name, resource_group_name, fabric_name, intent_object_name)
+
+
+def restore_azureworkloads(cmd, client, resource_group_name, vault_name, recovery_config):
+    trigger_restore_properties = AzureWorkloadRestoreRequest()
+    trigger_restore_request = RestoreRequestResource(properties=trigger_restore_properties)
+
+    # Trigger restore
+    result = sdk_no_wait(True, client.trigger,
+                         vault_name, resource_group_name, fabric_name, container_uri, item_uri, recovery_point_id,
+                         trigger_restore_request)
+    return cust_help._track_backup_job(cmd.cli_ctx, result, vault_name, resource_group_name)
+
+def show_recovery_config(cmd, client, resource_group_name, vault_name, restore_mode, item_name, rp_name, target_item,
+                         log_point_in_time):
+    return 
