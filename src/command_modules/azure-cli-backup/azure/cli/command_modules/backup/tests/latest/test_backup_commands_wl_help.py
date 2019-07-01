@@ -129,6 +129,14 @@ def test_backup_wl_policy(self, container_name1, container_name2, resource_group
         self.check('[].resourceGroup', '[\'{rg}\']')
     ])
 
+    self.cmd('backup policy delete -g {rg} -v {vault} -n {policy_new}')
+
+    self.cmd('backup policy list -g {rg} -v {vault}', checks=[
+        self.check("length([?name == '{default}'])", 1),
+        self.check("length([?name == '{policy}'])", 1),
+        self.check("length([?name == '{policy_new}'])", 0)
+    ])
+
 
 def test_backup_wl_item(self, container_name1, container_name2, resource_group, vault_name, policy_name, workload_type, subscription, item, id, item_type, item_id):
 
@@ -385,6 +393,8 @@ def test_backup_wl_auto_protection(self, container_name1, container_name2, resou
 
     self.kwargs['protectable_item'] = json.dumps(self.cmd('backup protectable-item show -v {vault} -g {rg} -pit {pit} -s {fname} -n {item} -wt {wt}').get_output_in_json(), separators=(',', ':')).replace('"', '\\"')
 
+    self.kwargs['protectable_item_name'] = self.kwargs['protectable_item']['name']
+
     self.cmd('backup protection auto-enable-for-AzureWL -v {vault} -g {rg} -p {policy} -pi {protectable_item}', checks=[
         self.check("properties.entityFriendlyName", '{item}'),
         self.check("properties.operation", "ConfigureBackup"),
@@ -392,7 +402,12 @@ def test_backup_wl_auto_protection(self, container_name1, container_name2, resou
         self.check("resourceGroup", '{rg}')
     ])
 
-    self.kwargs['container1'] = self.cmd('backup container show -n {name} -v {vault} -g {rg} -bmt AzureWorkload --query name').get_output_in_json()
+    self.cmd('backup protection disable auto-for-AzureWL -v {vault} -g {rg} -i {protectable_item_name}', checks=[
+        self.check("properties.entityFriendlyName", '{item}'),
+        self.check("properties.operation", "DisableBackup"),
+        self.check("properties.status", "Completed"),
+        self.check("resourceGroup", '{rg}')
+    ])
 
     self.cmd('backup container unregister -v {vault} -g {rg} -n {name} -y')
 
@@ -414,7 +429,8 @@ def test_backup_wl_protectable_item(self, container_name1, container_name2, reso
         'item': item,
         'id': id,
         'item_id': item_id,
-        'pit': item_type
+        'pit': item_type,
+        'protectable_item_name': 'newdb'
     })
 
     self.cmd('account set -s {sub}')
@@ -424,13 +440,20 @@ def test_backup_wl_protectable_item(self, container_name1, container_name2, reso
     self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
         self.check("length([?name == '{name}'])", 1)])
 
-    self.kwargs['container1'] = self.cmd('backup container show -n {name1} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
-    self.kwargs['container2'] = self.cmd('backup container show -n {name2} -v {vault} -g {rg} --query properties.friendlyName').get_output_in_json()
+    self.kwargs['container1'] = self.cmd('backup container show -n {name} -v {vault} -g {rg} --query properties.friendlyName -bmt AzureWorkload').get_output_in_json()
 
-    self.kwargs['name'] = self.cmd('backup protectable-item list -g {rg} -v {vault} --query [0].name').get_output_in_json()
+    self.cmd('backup protectable-item list -g {rg} -v {vault} -wt {wt}', checks=[
+        self.check("length([?properties.friendlyName == '{protectable_item_name}'])", 0)
+    ])
 
-    item1_json = self.cmd('backup protectable-item show -g {rg} -v {vault} -n {name}', checks=[
-        self.check('properties.friendlyName', '{name}'),
+    self.cmd('backup protectable-item initialize -g {rg} -v {vault} -wt {wt} -c {name}')
+
+    self.cmd('backup protectable-item list -g {rg} -v {vault} -wt {wt}', checks=[
+        self.check("length([?properties.friendlyName == '{protectable_item_name}'])", 1)
+    ])
+
+    item1_json = self.cmd('backup protectable-item show -g {rg} -v {vault} -n {protectable_item_name} -wt {wt} -pit {pit} -s {fname}', checks=[
+        self.check('properties.friendlyName', '{protectable_item_name}'),
         self.check('properties.protectedItemHealthStatus', 'NotReachable'),
         self.check('properties.protectionState', 'IRPending'),
         self.check('properties.protectionStatus', 'Healthy'),

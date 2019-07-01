@@ -112,8 +112,20 @@ def set_policy(client, resource_group_name, vault_name, policy, name=None):
         return custom.set_policy(client, resource_group_name, vault_name, policy)
 
 
+def delete_policy(client, resource_group_name, vault_name, name):
+    return custom.delete_policy(client, resource_group_name, vault_name, name)
+
+
 def new_policy(client, resource_group_name, vault_name, policy, name, workload_type, container_type="AzureWorkload"):
     return custom_wl.new_policy(client, resource_group_name, vault_name, policy, name, container_type, workload_type)
+
+
+def get_default_policy_for_vm(client, resource_group_name, vault_name):
+    return custom.get_default_policy_for_vm(client, resource_group_name, vault_name)
+
+
+def list_associated_items_for_policy(client, resource_group_name, vault_name, name):
+    return custom.list_associated_items_for_policy(client, resource_group_name, vault_name, name)
 
 
 def show_recovery_point(cmd, client, resource_group_name, vault_name, container_name, item_name, name,
@@ -134,8 +146,8 @@ def show_protectable_item(cmd, client, resource_group_name, vault_name, name, se
                                            workload_type, container_type)
 
 
-def initialize_protectable_items(cmd, client, resource_group_name, vault_name, container_name, workload_type):
-    return custom_wl.initialize_protectable_items(cmd, client, resource_group_name, vault_name, container_name, workload_type)
+def initialize_protectable_items(client, resource_group_name, vault_name, container_name, workload_type):
+    return custom_wl.initialize_protectable_items(client, resource_group_name, vault_name, container_name, workload_type)
 
 
 def unregister_wl_container(cmd, client, vault_name, resource_group_name, container_name):
@@ -166,8 +178,8 @@ def auto_enable_for_azure_wl(cmd, client, resource_group_name, vault_name, polic
     return custom_wl.auto_enable_for_azure_wl(cmd, client, resource_group_name, vault_name, policy_name, protectable_item)
 
 
-def disable_auto_for_azure_wl(cmd, client, resource_group_name, vault_name, item_name):
-    return custom_wl.disable_auto_for_azure_wl(cmd, client, resource_group_name, vault_name, item_name)
+def disable_auto_for_azure_wl(client, resource_group_name, vault_name, item_name):
+    return custom_wl.disable_auto_for_azure_wl(client, resource_group_name, vault_name, item_name)
 
 
 def restore_disks(cmd, client, resource_group_name, vault_name, container_name, item_name, rp_name, storage_account,
