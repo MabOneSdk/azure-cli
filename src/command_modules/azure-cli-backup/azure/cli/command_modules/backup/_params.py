@@ -132,17 +132,14 @@ def load_arguments(self, _):
         c.argument('item_name', item_name_type)
         c.argument('start_date', type=datetime_type, help='The start date of the range in UTC (d-m-Y).')
         c.argument('end_date', type=datetime_type, help='The end date of the range in UTC (d-m-Y).')
+        c.argument('workload_type', wl_type)
 
     with self.argument_context('backup recoverypoint list') as c:
-        c.argument('vault_name', vault_name_type, id_part=None)
-        c.argument('workload_type', wl_type)
         c.argument('container_type', backup_management_type)
 
     with self.argument_context('backup recoverypoint show') as c:
         c.argument('name', rp_name_type, options_list=['--name', '-n'], help='Name of the recovery point. You can use the backup recovery point list command to get the name of a backed up item.')
-
-    with self.argument_context('backup recoverypoint logchain show') as c:
-        c.argument('workload_type', wl_type)
+        c.argument('container_type', backup_management_type)
 
     # Protection
     with self.argument_context('backup protection') as c:
@@ -189,7 +186,7 @@ def load_arguments(self, _):
         c.argument('storage_account', help='Name or ID of the staging storage account. The VM configuration will be restored to this storage account. See the help for --restore-to-staging-storage-account parameter for more info.')
         c.argument('restore_to_staging_storage_account', arg_type=get_three_state_flag(), help='Use this flag when you want disks to be restored to the staging storage account using the --storage-account parameter. When not specified, disks will be restored to their original storage accounts. Default: false.')
 
-    with self.argument_context('backup restore restore-azureworkloads') as c:
+    with self.argument_context('backup restore restore-azurewl') as c:
         c.argument('recovery_config', type=file_type, help='JSON encoded protectable item definition.', completer=FilesCompleter(), options_list=['--recovery-config', '-rc'])
 
     # Job
@@ -213,10 +210,11 @@ def load_arguments(self, _):
 
     with self.argument_context('backup recoveryconfig') as c:
         c.argument('vault_name', vault_name_type, id_part='name')
+        c.argument('container_name', container_name_type)
+        c.argument('item_name', item_name_type)
         c.argument('restore_mode', arg_type=get_enum_type(['OriginalWorkloadRestore', 'AlternateWorkloadRestore']), options_list=['--restore-mode', '-m'])
 
     with self.argument_context('backup recoveryconfig show') as c:
-        c.argument('item_name', item_name_type)
         c.argument('rp_name', rp_name_type)
         c.argument('target_item', type=file_type, help='JSON encoded protectable item definition.', completer=FilesCompleter(), options_list=['--target-item', '-ti'])
-        c.argument('log_point_in_time', type=datetime_type, options_list=['--log-point-in-time', '-lp'])
+        c.argument('log_point_in_time', options_list=['--log-point-in-time', '-lp'])

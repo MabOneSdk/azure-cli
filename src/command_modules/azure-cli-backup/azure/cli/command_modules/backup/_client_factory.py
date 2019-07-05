@@ -116,6 +116,10 @@ def backup_jobs_cf(cli_ctx, *_):
     return _backup_client_factory(cli_ctx).backup_jobs
 
 
+def backup_workload_items_cf(cli_ctx, *_):
+    return _backup_client_factory(cli_ctx).backup_workload_items
+
+
 # Job Client Factories
 def job_details_cf(cli_ctx, *_):
     return _backup_client_factory(cli_ctx).job_details

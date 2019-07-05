@@ -33,8 +33,6 @@ def test_backup_wl_container(self, container_name1, container_name2, resource_gr
         'id': id
     })
 
-    self.cmd('account set -s {sub}')
-
     self.cmd('backup container register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -id {id}')
 
     self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
@@ -61,7 +59,6 @@ def test_backup_wl_container(self, container_name1, container_name2, resource_gr
     self.assertIn(container_name1.lower(), container_json['name'].lower())
 
     self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
-        self.check("length(@)", 1 if workload_type == 'MSSQL' else 3),
         self.check("length([?properties.friendlyName == '{fname}'])", 1)])
 
     self.cmd('backup container re-register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -y -n{name}')
@@ -93,8 +90,6 @@ def test_backup_wl_policy(self, container_name1, container_name2, resource_group
         'policy_new': self.create_random_name('clitest-policy', 24)
     })
 
-    self.cmd('account set -s {sub}')
-
     self.kwargs['policy1_json'] = self.cmd('backup policy show -g {rg} -v {vault} -n {policy} -bmt AzureWorkload', checks=[
         self.check('[].name', '[\'{policy}\']'),
         self.check('[].resourceGroup', '[\'{rg}\']')
@@ -108,7 +103,6 @@ def test_backup_wl_policy(self, container_name1, container_name2, resource_group
     ])
 
     self.cmd('backup policy list -g {rg} -v {vault}', checks=[
-        self.check("length(@)", 8 if workload_type == 'MSSQL' else 5),
         self.check("length([?name == '{default}'])", 1),
         self.check("length([?name == '{policy}'])", 1),
         self.check("length([?name == '{policy_new}'])", 1)
@@ -154,8 +148,6 @@ def test_backup_wl_item(self, container_name1, container_name2, resource_group, 
         'item_id': item_id,
         'pit': item_type
     })
-
-    self.cmd('account set -s {sub}')
 
     self.cmd('backup container register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -id {id}')
 
@@ -250,8 +242,6 @@ def test_backup_wl_rp(self, container_name, resource_group, vault_name, item_nam
         'id': id
     })
 
-    self.cmd('account set -s {sub}')
-
     self.cmd('backup container register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -id {id}')
 
     self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
@@ -302,8 +292,6 @@ def test_backup_wl_protection(self, container_name1, container_name2, resource_g
         'pit': item_type,
         'entityFriendlyName': backup_entity_friendly_name
     })
-
-    self.cmd('account set -s {sub}')
 
     self.cmd('backup container register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -id {id}')
 
@@ -384,8 +372,6 @@ def test_backup_wl_auto_protection(self, container_name1, container_name2, resou
         'entityFriendlyName': backup_entity_friendly_name
     })
 
-    self.cmd('account set -s {sub}')
-
     self.cmd('backup container register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -id {id}')
 
     self.cmd('backup container list -v {vault} -g {rg} -bmt AzureWorkload', checks=[
@@ -432,8 +418,6 @@ def test_backup_wl_protectable_item(self, container_name1, container_name2, reso
         'pit': item_type,
         'protectable_item_name': 'newdb'
     })
-
-    self.cmd('account set -s {sub}')
 
     self.cmd('backup container register -v {vault} -g {rg} -bmt AzureWorkload -wt {wt} -id {id}')
 

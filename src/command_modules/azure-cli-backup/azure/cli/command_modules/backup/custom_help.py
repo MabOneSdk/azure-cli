@@ -7,6 +7,7 @@ import time
 import json
 import re
 import os
+import time
 from datetime import datetime, timedelta
 from six.moves.urllib.parse import urlparse  # pylint: disable=import-error
 
@@ -64,6 +65,15 @@ def _is_range_valid(start_date, end_date):
                     """
                     Start date must be earlier than end date.
                     """)
+
+
+def _get_target_path(type, path, logical_name, data_directory_paths):
+    for i in data_directory_paths:
+        if i.type == type:
+            data_directory_path = i
+    file_type = path.split('\\')[-1].split('.')[1]
+    file_name = logical_name + '_' + str(int(time.time())) + '.' + file_type
+    return data_directory_path.path + file_name
 
 
 def _get_containers(client, container_type, status, resource_group_name, vault_name, container_name=None):
@@ -356,6 +366,8 @@ def _get_filter_string(filter_dict):
             filter_segment = "{} eq '{}'".format(k, v)
         elif isinstance(v, datetime):
             filter_segment = "{} eq '{}'".format(k, v.strftime('%Y-%m-%d %I:%M:%S %p'))  # yyyy-MM-dd hh:mm:ss tt
+        elif isinstance(v, bool):
+            filter_segment = "{} eq '{}'".format(k, str(v))
         if filter_segment is not None:
             filter_list.append(filter_segment)
     filter_string = " and ".join(filter_list)

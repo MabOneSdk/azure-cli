@@ -63,6 +63,16 @@ def list_items(cmd, client, resource_group_name, vault_name, workload_type=None,
         return custom_wl.list_wl_items(client, resource_group_name, vault_name, workload_type, container_name)
 
 
+def show_recovery_point(cmd, client, resource_group_name, vault_name, container_name, item_name, name, workload_type=None,
+                        container_type="AzureIaasVM", item_type="VM"):
+    if container_type == "AzureIaasVM" and workload_type is None:
+        return custom.show_recovery_point(cmd, client, resource_group_name, vault_name, container_name, item_name, name,
+                                          container_type, item_type)
+    else:
+        return custom_wl.show_wl_recovery_point(cmd, client, resource_group_name, vault_name, container_name, item_name, name,
+                                                workload_type, container_type)
+
+
 def list_recovery_points(cmd, client, resource_group_name, vault_name, container_name, item_name, workload_type=None,
                          container_type="AzureIaasVM", item_type="VM", start_date=None, end_date=None):
     if container_type == "AzureIaasVM" and workload_type is None:
@@ -128,12 +138,6 @@ def list_associated_items_for_policy(client, resource_group_name, vault_name, na
     return custom.list_associated_items_for_policy(client, resource_group_name, vault_name, name)
 
 
-def show_recovery_point(cmd, client, resource_group_name, vault_name, container_name, item_name, name,
-                        container_type="AzureIaasVM", item_type="VM"):
-    return custom.show_recovery_point(cmd, client, resource_group_name, vault_name, container_name, item_name, name,
-                                      container_type, item_type)
-
-
 def list_protectable_items(cmd, client, resource_group_name, vault_name, workload_type, container_name=None,
                            container_type="AzureWorkload"):
     return custom_wl.list_protectable_items(cmd, client, resource_group_name, vault_name, workload_type, container_name,
@@ -192,7 +196,7 @@ def restore_azure_wl(cmd, client, resource_group_name, vault_name, recovery_conf
     return custom_wl.restore_azure_wl(cmd, client, resource_group_name, vault_name, recovery_config)
 
 
-def show_recovery_config(cmd, client, resource_group_name, vault_name, restore_mode, item_name=None, rp_name=None, target_item=None,
-                         log_point_in_time=None):
-    return custom_wl.show_recovery_config(cmd, client, resource_group_name, vault_name, restore_mode, item_name, rp_name, target_item,
-                                          log_point_in_time)
+def show_recovery_config(cmd, client, resource_group_name, vault_name, restore_mode, container_name, item_name, rp_name=None,
+                         target_item=None, log_point_in_time=None):
+    return custom_wl.show_recovery_config(cmd, client, resource_group_name, vault_name, restore_mode, container_name, item_name,
+                                          rp_name, target_item, log_point_in_time)
