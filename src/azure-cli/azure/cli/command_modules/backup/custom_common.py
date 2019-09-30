@@ -39,7 +39,7 @@ def list_policies(client, resource_group_name, vault_name, workload_type=None, b
     workload_type_map = {'MSSQL': 'SQLDataBase',
                          'SAPHANA': 'SAPHanaDatabase',
                          'SAPASE': 'SAPAseDatabase'}
-    if workload_type:
+    if workload_type and workload_type in workload_type_map:
         workload_type = workload_type_map[workload_type]
 
     filter_string = custom_help.get_filter_string({
