@@ -665,3 +665,12 @@ def show_recovery_config(cmd, client, resource_group_name, vault_name, restore_m
         'database_name': db_name,
         'container_id': container_id,
         'alternate_directory_paths': alternate_directory_paths})
+
+
+def create_vault(client, vault_name, resource_group_name, location):
+    vault_sku = Sku(name=SkuName.standard)
+    vault_properties = VaultProperties()
+
+    vault = Vault(location=location, sku=vault_sku, properties=vault_properties)
+    return client.create_or_update(resource_group_name, vault_name, vault)
+
