@@ -221,8 +221,7 @@ def set_policy(client, resource_group_name, vault_name, policy, policy_name):
 
     policy_object = cust_help.get_policy_from_json(client, policy)
 
-    return client.create_or_update(vault_name, resource_group_name, policy_name, policy_object)
-
+    return client.create_or_update(vault_name, resource_group_name, policy_name, policy_object)ewfbkjewfwj
 
 def show_protectable_item(items, name, server_name, protectable_item_type):
     if protectable_item_type_map.get(protectable_item_type) is not None:
